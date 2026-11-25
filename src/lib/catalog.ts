@@ -56,4 +56,4 @@ export const sampleCatalog: Product[] = [
 
 export const money = (cents: number) => `S/ ${(cents / 100).toFixed(2)}`;
 export const climateLabel: Record<string, string> = { calido: 'Clima cálido', fresco: 'Clima fresco' };
-export const occasionLabel: Record<string, string> = { diario: 'Día a día', noche: 'Noche y eventos', regalo: 'Para regalar' };
+export const occasionLabel: Record<string, string> = { diario: 'Día a día', noche: 'Noche y eventos' };

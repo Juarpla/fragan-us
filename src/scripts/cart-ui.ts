@@ -86,14 +86,14 @@ feedback.addEventListener('focusout', dismissFeedbackLater);
 dialog.querySelector('[data-cart-continue]')?.addEventListener('click', () => dialog.close());
 dialog.addEventListener('click', event => { if (event.target === dialog) dialog.close(); });
 
-document.querySelectorAll<HTMLButtonElement>('[data-add]').forEach(button => {
-  button.addEventListener('click', () => {
-    const product = JSON.parse(button.dataset.add!);
-    const added = addProduct(product);
-    const copy = added ? `${product.name} se agregó a tu bolsa.` : 'Llegaste al máximo disponible para tu bolsa.';
-    status.textContent = copy;
-    feedbackCopy.textContent = copy;
-    feedback.hidden = false;
-    dismissFeedbackLater();
-  });
+document.addEventListener('click', event => {
+  const button = (event.target as Element).closest<HTMLButtonElement>('[data-add]');
+  if (!button || button.disabled) return;
+  const product = JSON.parse(button.dataset.add!);
+  const added = addProduct(product);
+  const copy = added ? `${product.name} se agregó a tu bolsa.` : 'Llegaste al máximo disponible para tu bolsa.';
+  status.textContent = copy;
+  feedbackCopy.textContent = copy;
+  feedback.hidden = false;
+  dismissFeedbackLater();
 });

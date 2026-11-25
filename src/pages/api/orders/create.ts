@@ -2,58 +2,65 @@ import type { APIRoute } from 'astro';
 import { parseCart, priceCart } from '../../../lib/db';
 import { checkoutMode, isSameOrigin, json, validId } from '../../../lib/http';
 import { storeEnv } from '../../../lib/runtime';
-import { sendRequestNotification } from '../../../lib/telegram';
+import { districtsByCode, getAgencyDirectory } from '../../../lib/shipping-directory';
 
-export const POST: APIRoute = async ({ request, locals }) => {
+export const POST: APIRoute = async ({ request }) => {
   if (!isSameOrigin(request)) return json({ error: 'Solicitud no válida.' }, 403);
   const env = storeEnv;
   const db = env.DB;
   const mode = checkoutMode(env);
-  if (!db || mode === 'unavailable') return json({ error: 'La compra aún no está habilitada.' }, 503);
+  if (!db || mode === 'unavailable') return json({ error: 'El pago aún no está habilitado.' }, 503);
 
   const body = await request.json<Record<string, unknown>>().catch(() => null);
   if (!body || !validId(body.checkoutId) || !validId(body.sessionId)) {
     return json({ error: 'La sesión de compra no es válida.' }, 400);
   }
-  const { checkoutId, sessionId } = body;
+  const { checkoutId, sessionId, agencyId } = body;
   const isDemo = mode === 'demo' ? 1 : 0;
   const findExisting = () => db.prepare('SELECT order_code FROM orders WHERE checkout_id = ? AND is_demo = ?')
     .bind(checkoutId, isDemo).first<{ order_code: string }>();
   const field = (key: string) => typeof body[key] === 'string' ? body[key].trim() : '';
   const name = field('name');
   const phone = field('phone');
-  const city = field('city');
-  const address = field('address');
-  if (name.length < 2 || name.length > 90 || !/^9\d{8}$/.test(phone) || field('shipping') !== 'SHALOM' ||
-    city.length < 2 || city.length > 90 || address.length < 2 || address.length > 220) {
-    return json({ error: 'Revisa tus datos y selecciona el envío nacional a agencia.' }, 400);
+  const requestedDistrict = districtsByCode.get(field('ubigeo'));
+  if (name.length < 2 || name.length > 90 || !/^9\d{8}$/.test(phone) || !requestedDistrict ||
+      typeof agencyId !== 'number' || !Number.isSafeInteger(agencyId) || agencyId <= 0) {
+    return json({ error: 'Revisa tus datos y elige la agencia donde recogerás el pedido.' }, 400);
   }
 
   try {
     const existing = await findExisting();
     if (existing) return json({ code: existing.order_code });
 
+    const { agencies } = await getAgencyDirectory(env);
+    const agency = agencies.find(item => item.id === agencyId);
+    const agencyDistrict = agency && districtsByCode.get(agency.ubigeo);
+    if (!agency || !agencyDistrict) return json({ error: 'La agencia elegida ya no está disponible. Actualiza el listado y selecciona otra.' }, 409);
+
     const priced = await priceCart(db, parseCart(body.cart));
     if (priced.total !== body.expectedTotal) {
-      return json({ error: 'Actualizamos los precios. Revisa el total y vuelve a enviar tu solicitud.', quote: priced }, 409);
+      return json({ error: 'Actualizamos los precios. Revisa el total y vuelve a continuar al pago.', quote: priced }, 409);
     }
     const code = 'FRG-' + crypto.randomUUID().replaceAll('-', '').slice(0, 16).toUpperCase();
+    const city = requestedDistrict.slice(1, 4).join(' / ');
+    const address = `${agency.name} · ${agency.address} · ${agencyDistrict.slice(1, 4).join(' / ')}`;
     await db.batch([
       db.prepare(`INSERT INTO orders (
           order_code, checkout_id, customer_name, customer_phone, city, shipping_address, shipping_method,
-          items_json, total_cents, is_demo, status
-        ) VALUES (?, ?, ?, ?, ?, ?, 'SHALOM', ?, ?, ?, 'PENDING_CONFIRMATION')`)
-        .bind(code, checkoutId, name, phone, city, address, JSON.stringify(priced.items), priced.total, isDemo),
+          agency_id, destination_ubigeo, whatsapp_offers, items_json, total_cents, is_demo, status, stock_reserved, reserved_until
+        ) VALUES (?, ?, ?, ?, ?, ?, 'SHALOM', ?, ?, ?, ?, ?, ?, 'AWAITING_PAYMENT', 1, datetime('now', '+30 minutes'))`)
+        .bind(code, checkoutId, name, phone, city, address, agency.id, requestedDistrict[0], body.whatsappOffers === true ? 1 : 0,
+          JSON.stringify(priced.items), priced.total, isDemo),
       db.prepare(`UPDATE abandoned_carts SET status = 'CONVERTED', updated_at = CURRENT_TIMESTAMP
-        WHERE session_id = ? AND customer_phone = ? AND status = 'ABANDONED'`).bind(sessionId, phone),
+        WHERE session_id = ? AND status = 'ABANDONED'`).bind(sessionId),
     ]);
-    if (mode === 'live') locals.cfContext.waitUntil(sendRequestNotification(env, { code, name, phone, city, total: priced.total, items: priced.items }));
     return json({ code }, 201);
   } catch (error) {
-    if (error instanceof Error && /^(Stock|Revisa)/.test(error.message)) return json({ error: error.message }, 409);
     const saved = await findExisting().catch(() => null);
     if (saved) return json({ code: saved.order_code });
-    console.error('No se pudo registrar la solicitud.', error);
-    return json({ error: 'No pudimos registrar la solicitud. Intenta de nuevo.' }, 503);
+    if (error instanceof Error && /^(Stock|Revisa)/.test(error.message)) return json({ error: error.message }, 409);
+    if (String(error).includes('INSUFFICIENT_STOCK')) return json({ error: 'Cambió el stock de tu bolsa. Revisa las cantidades e inténtalo de nuevo.' }, 409);
+    console.error('No se pudo registrar el pedido.', error);
+    return json({ error: 'No pudimos registrar el pedido. Intenta de nuevo.' }, 503);
   }
 };

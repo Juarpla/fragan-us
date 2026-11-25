@@ -1,0 +1,52 @@
+name: Actualizar agencias de Shalom
+
+on:
+  schedule:
+    - cron: '23 10 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: shalom-agencies
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    if: github.ref_name == github.event.repository.default_branch
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Comprobar el intervalo de tres días
+        id: interval
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+        run: |
+          today=$(( $(date -u +%s) / 86400 ))
+          if [[ "$EVENT_NAME" == workflow_dispatch || $(( today % 3 )) == 0 ]]; then
+            echo 'run=true' >> "$GITHUB_OUTPUT"
+          fi
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        if: steps.interval.outputs.run == 'true'
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        if: steps.interval.outputs.run == 'true'
+        with:
+          node-version: '24'
+          cache: npm
+      - name: Revisar el buscador público
+        if: steps.interval.outputs.run == 'true'
+        run: |
+          npm ci
+          npx playwright install --with-deps --only-shell chromium
+          node scripts/sync-shalom.mjs
+      - name: Publicar el listado para la tienda
+        if: steps.interval.outputs.run == 'true'
+        run: |
+          git diff --quiet -- src/data/shalom-agencies.json && exit 0
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add src/data/shalom-agencies.json
+          git commit -m 'Actualizar agencias habilitadas de Shalom'
+          git pull --rebase
+          git push

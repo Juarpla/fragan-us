@@ -1,5 +1,5 @@
 ---
-import { ArrowDown, ArrowRight, CreditCard, Gift, MapPin, MoonStar, ShieldCheck, Snowflake, Sparkles, Sun, Truck, Wind } from '@lucide/astro';
+import { ArrowDown, ArrowRight, CreditCard, MapPin, MoonStar, ShieldCheck, Snowflake, Sparkles, Sun, Truck, Wind } from '@lucide/astro';
 import Base from '../layouts/Base.astro';
 import ProductCard from '../components/ProductCard.astro';
 import { catalogGroups, catalogHref, catalogParams, catalogSelection } from '../lib/catalog-filters';
@@ -14,7 +14,7 @@ const matches = products.filter(product => {
   const searchable = terms([product.name, product.brand, product.family, product.audience, ...Object.values(product.notes)].join(' '));
   return (!filter || tags.includes(filter)) && (!query || terms(query).split(/\s+/).every(word => searchable.includes(word)));
 });
-const filterIcons = { calido: Sun, fresco: Snowflake, diario: Wind, noche: MoonStar, regalo: Gift };
+const filterIcons = { calido: Sun, fresco: Snowflake, diario: Wind, noche: MoonStar };
 ---
 <Base>
   <section class="hero container" aria-labelledby="hero-title">
@@ -33,7 +33,7 @@ const filterIcons = { calido: Sun, fresco: Snowflake, diario: Wind, noche: MoonS
 
   <div class="container assurances" aria-label="Información de compra">
     <div><span class="assurance-icon"><Truck size={21} stroke-width={1.7} aria-hidden="true" /></span><div><strong>Envíos a todo el Perú</strong><p class="assurance-shipping">Llegamos por Shalom</p></div></div>
-    <div><span class="assurance-icon"><CreditCard size={21} stroke-width={1.7} aria-hidden="true" /></span><div><strong>Pago con Yape o Plin</strong><p>Después de confirmar tu pedido</p></div></div>
+    <div><span class="assurance-icon"><CreditCard size={21} stroke-width={1.7} aria-hidden="true" /></span><div><strong>Pago con Yape o Plin</strong><p>Verificamos el pago antes de preparar tu pedido</p></div></div>
     <div><span class="assurance-icon"><Sparkles size={21} stroke-width={1.7} aria-hidden="true" /></span><div><strong>Selección por clima y ocasión</strong><p>Encuentra un aroma para tu plan</p></div></div>
   </div>
 
@@ -41,33 +41,39 @@ const filterIcons = { calido: Sun, fresco: Snowflake, diario: Wind, noche: MoonS
     <div class="section-heading">
       <div><h2 id="catalog-title">Encuentra tu aroma</h2><p>Explora fragancias dulces, frescas y especiadas.</p></div>
     </div>
-    <nav id="guia" class="catalog-filters" aria-label="Filtrar perfumes">
-      {catalogGroups.map(({ label, id, options }) =>
-        <div class="catalog-filter-group" id={id} tabindex="-1" role="group" aria-label={label}>
-          <span class="catalog-filter-label">{label}</span>
-          <div class="filters">
-            {Object.entries(options).map(([value, text]) => {
-              const Icon = filterIcons[value as keyof typeof filterIcons];
-              return <a href={catalogHref(filter === value ? '' : value, query, id)} class:list={['filter', value === filter && 'selected']} aria-current={value === filter ? 'true' : undefined}>{Icon && <Icon size={16} aria-hidden="true" />}{text}</a>;
-            })}
+    <div data-catalog-results>
+      <nav id="guia" class="catalog-filters" aria-label="Filtrar perfumes">
+        {catalogGroups.map(({ label, id, options }) =>
+          <div class="catalog-filter-group" id={id} tabindex="-1" role="group" aria-label={label}>
+            <span class="catalog-filter-label">{label}</span>
+            <div class="filters">
+              {Object.entries(options).map(([value, text]) => {
+                const Icon = filterIcons[value as keyof typeof filterIcons];
+                return <a href={catalogHref(filter === value ? '' : value, query, id)} class:list={['filter', value === filter && 'selected']} data-catalog-filter={value} aria-current={value === filter ? 'true' : undefined}>{Icon && <Icon size={16} aria-hidden="true" />}{text}</a>;
+              })}
+            </div>
           </div>
-        </div>
-      )}
-    </nav>
-    <div class="query-status">
-      <p>{query && <>Resultados para «{query}» <span>· </span></>}<span>{matches.length} {matches.length === 1 ? 'perfume' : 'perfumes'}</span></p>
-      {(query || filter) && <a class="inline-link" href="/#catalogo">Ver todos</a>}
+        )}
+      </nav>
+      <div class="query-status">
+        <p>{query && <>Resultados para «{query}» <span>· </span></>}<span>{matches.length} {matches.length === 1 ? 'perfume' : 'perfumes'}</span></p>
+        {(query || filter) && <a class="inline-link" data-catalog-clear href="/#catalogo">Ver todos</a>}
+      </div>
+      {matches.length ? <div class="product-grid">{matches.map(product => <ProductCard product={product} catalogQuery={catalogParams(filter, query)} />)}</div> :
+        <div class="empty-card"><h3>{products.length ? 'No encontramos perfumes' : 'Aún no hay perfumes en el catálogo'}</h3>{products.length > 0 && <><p>Prueba con otro nombre, otra nota o vuelve a la colección.</p><a class="button secondary" data-catalog-clear href="/#catalogo">Ver todos los perfumes</a></>}</div>}
     </div>
-    {matches.length ? <div class="product-grid">{matches.map(product => <ProductCard product={product} catalogQuery={catalogParams(filter, query)} />)}</div> :
-      <div class="empty-card"><h3>No encontramos perfumes</h3><p>Prueba con otro nombre, otra nota o vuelve a la colección.</p><a class="button secondary" href="/#catalogo">Ver todos los perfumes</a></div>}
+    <p class="sr-only" data-catalog-status role="status"></p>
   </section>
 
   <section class="container delivery-section" id="envios" aria-labelledby="delivery-title">
     <h2 id="delivery-title">Envíos a todo el Perú</h2>
     <div class="delivery-details">
-      <div><Truck size={23} aria-hidden="true" /><h3>Despacho por Shalom</h3><p>Indica tu ciudad y la agencia de Shalom de tu preferencia al solicitar el pedido.</p></div>
-      <div><MapPin size={23} aria-hidden="true" /><h3>Flete por pagar</h3><p>Te confirmamos la cobertura y el costo por WhatsApp. Paga el flete directamente a Shalom.</p></div>
-      <div><ShieldCheck size={23} aria-hidden="true" /><h3>Pago de los perfumes</h3><p>Paga por Yape o Plin cuando confirmemos tu pedido. Guarda tu código para consultar el estado.</p></div>
+      <div><Truck size={23} aria-hidden="true" /><h3>Despacho por Shalom</h3><p>Elige la agencia de destino al finalizar tu compra.</p></div>
+      <div><MapPin size={23} aria-hidden="true" /><h3>Flete por pagar</h3><p>Shalom fija el precio del flete y te lo cobra por separado.</p></div>
+      <div><ShieldCheck size={23} aria-hidden="true" /><h3>Pago de los perfumes</h3><p>Paga por Yape o Plin y adjunta tu comprobante. Al verificar el pago, confirmamos el pedido para prepararlo y enviarlo.</p></div>
     </div>
   </section>
 </Base>
+<script>
+  import '../scripts/catalog-ui';
+</script>

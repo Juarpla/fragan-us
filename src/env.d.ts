@@ -4,8 +4,7 @@ interface StoreEnv {
   DEMO_MODE?: string;
   STOREFRONT_PREVIEW?: string;
   PAYMENT_PHONE?: string;
-  PAYMENT_RECIPIENT?: string;
-  PAYMENT_QR_ENABLED?: string;
+  ADMIN_LOGIN_LIMIT?: RateLimit;
   ADMIN_USER?: string;
   ADMIN_PASSWORD?: string;
   TELEGRAM_BOT_TOKEN?: string;

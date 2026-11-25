@@ -7,7 +7,7 @@ export function checkoutMode(env?: StoreEnv) {
   if (!env?.DB || !env.RECEIPTS_BUCKET) return 'unavailable';
   if (env.DEMO_MODE === 'true') return 'demo';
   if (env.STOREFRONT_PREVIEW === 'true') return 'unavailable';
-  if (/^9\d{8}$/.test(env.PAYMENT_PHONE ?? '') && env.PAYMENT_RECIPIENT?.trim()) return 'live';
+  if (/^9\d{8}$/.test(env.PAYMENT_PHONE ?? '')) return 'live';
   return 'unavailable';
 }
 
@@ -15,7 +15,7 @@ export function isSameOrigin(request: Request) {
   return request.headers.get('Origin') === new URL(request.url).origin;
 }
 
-export function isAdmin(request: Request, env?: StoreEnv) {
+function isAdmin(request: Request, env?: StoreEnv) {
   if (!env?.ADMIN_USER || !env.ADMIN_PASSWORD) return false;
   const encoded = request.headers.get('Authorization')?.match(/^Basic ([A-Za-z0-9+/=]+)$/i)?.[1];
   if (!encoded) return false;
@@ -30,10 +30,22 @@ export function isAdmin(request: Request, env?: StoreEnv) {
   }
 }
 
-export const adminChallenge = () => new Response('Acceso restringido.', {
+const adminChallenge = () => new Response('Acceso restringido.', {
   status: 401,
   headers: { 'WWW-Authenticate': 'Basic realm="FraganUS", charset="UTF-8"', 'Cache-Control': 'no-store' },
 });
+
+export async function guardAdmin(request: Request, env: StoreEnv) {
+  if (isAdmin(request, env)) return null;
+  const ip = request.headers.get('CF-Connecting-IP');
+  if (ip && env.ADMIN_LOGIN_LIMIT && request.headers.has('Authorization')) {
+    const { success } = await env.ADMIN_LOGIN_LIMIT.limit({ key: ip });
+    if (!success) return new Response('Demasiados intentos. Vuelve a intentarlo en un minuto.', {
+      status: 429, headers: { 'Retry-After': '60', 'Cache-Control': 'no-store' },
+    });
+  }
+  return adminChallenge();
+}
 
 export const validId = (value: unknown): value is string =>
   typeof value === 'string' && /^[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}$/.test(value);

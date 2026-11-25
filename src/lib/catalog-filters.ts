@@ -3,7 +3,7 @@ import { climateLabel, occasionLabel } from './catalog';
 export const catalogGroups = [
   { label: 'Por clima', id: 'climas', options: climateLabel },
   { label: 'Por ocasión', id: 'ocasiones', options: occasionLabel },
-  { label: 'Preferencias', id: 'preferencias', options: { el: 'Para él', ella: 'Para ella', unisex: 'Unisex', frescos: 'Aromas frescos' } },
+  { label: 'Preferencias', id: 'preferencias', options: { el: 'Para él', ella: 'Para ella', unisex: 'Unisex' } },
 ];
 
 const available = new Set(catalogGroups.flatMap(group => Object.keys(group.options)));

@@ -1,5 +1,6 @@
 ---
 import { ArrowRight, Truck } from '@lucide/astro';
+import AgencyPicker from '../components/AgencyPicker.astro';
 import Base from '../layouts/Base.astro';
 import { checkoutMode } from '../lib/http';
 import { storeEnv } from '../lib/runtime';
@@ -7,31 +8,27 @@ import { storeEnv } from '../lib/runtime';
 const mode = checkoutMode(storeEnv);
 Astro.response.headers.set('Cache-Control', 'no-store');
 ---
-<Base title="Solicitar pedido" minimal privatePage showCart>
+<Base title="Finalizar compra" minimal privatePage showCart>
   <section class="container inner-section" data-checkout data-mode={mode}>
-    <h1 class="inner-title">Solicita tu pedido</h1>
-    <p class="inner-copy">Te confirmaremos por WhatsApp la disponibilidad de los perfumes, la cobertura y el costo del envío.</p>
+    <h1 class="inner-title">Finaliza tu compra</h1>
+    <p class="inner-copy">Elige tu agencia de destino y continúa al pago de los perfumes.</p>
     {mode === 'demo' && <p class="notice">Modo de prueba. Usa datos ficticios. No realices un pago.</p>}
-    {mode === 'unavailable' && <p class="notice">Las solicitudes de compra aún no están habilitadas en esta vista previa.</p>}
+    {mode === 'unavailable' && <p class="notice">El pago en línea aún no está habilitado.</p>}
     <div class="empty-card" data-checkout-empty hidden><h2>Tu bolsa está vacía</h2><p>Agrega un perfume para continuar.</p><a href="/#catalogo" class="button primary">Ver perfumes <ArrowRight size={17} aria-hidden="true" /></a></div>
     <div class="checkout-grid" data-checkout-content hidden>
       <div class="panel">
         <h2>Datos de envío</h2>
         <form data-order-form>
-          <fieldset disabled={mode === 'unavailable'}>
+          <fieldset>
             <div class="fields">
               <label class="field">Nombre completo<input name="name" autocomplete="name" maxlength="90" minlength="2" required /></label>
               <label class="field">WhatsApp<input name="phone" type="tel" autocomplete="tel-national" inputmode="tel" maxlength="17" placeholder="987 654 321" required /></label>
-              <label class="shipping-choice span-two">
-                <input type="radio" name="shipping" value="SHALOM" required />
-                <span><strong>Envío nacional a agencia</strong><span>El envío se paga por separado.</span></span>
-              </label>
-              <label class="field">Ciudad<input name="city" autocomplete="address-level2" minlength="2" maxlength="90" required /></label>
-              <label class="field">Agencia de destino preferida<input name="address" minlength="2" maxlength="220" required /></label>
-              <label class="consent span-two"><input type="checkbox" name="resume" /><span>Autorizo a FraganUS a escribirme por WhatsApp si dejo esta compra pendiente. <a href="/privacidad">Ver privacidad</a>.</span></label>
+              <AgencyPicker />
+              <p class="checkout-contact span-two">Usaremos tu WhatsApp para consultas sobre el pedido y para avisarte de su estado.</p>
+              <label class="consent span-two"><input type="checkbox" name="resume" /><span>Quiero recibir ofertas de FraganUS y recordatorios de mi bolsa por WhatsApp. <a href="/privacidad">Ver privacidad</a>.</span></label>
             </div>
-            <p class="checkout-terms" id="request-terms">Después de confirmar tu pedido, podrás pagar los perfumes por Yape o Plin. El envío se paga por separado al transportista.</p>
-            <div class="checkout-actions"><button class="button primary" type="submit" data-confirm aria-describedby="request-terms">Enviar solicitud <ArrowRight size={17} aria-hidden="true" /></button></div>
+            <p class="checkout-terms" id="request-terms">Paga por Yape o Plin y sube el comprobante. Cuando verifiquemos el abono, confirmaremos tu pedido para prepararlo y enviarlo.</p>
+            <div class="checkout-actions"><button class="button primary" type="submit" data-confirm aria-describedby="request-terms" disabled>Continuar al pago <ArrowRight size={17} aria-hidden="true" /></button></div>
           </fieldset>
           <p class="error-message" data-checkout-error role="alert"></p>
         </form>
@@ -40,10 +37,10 @@ Astro.response.headers.set('Cache-Control', 'no-store');
         <div class="checkout-summary-heading"><h2>Tu bolsa</h2><button type="button" class="inline-link" data-cart-open>Editar bolsa</button></div>
         <div class="checkout-list" data-checkout-list></div>
         <div class="checkout-total"><strong>Total en productos</strong><strong data-checkout-total></strong></div>
-        <p class="mt-2"><Truck size={17} class="inline" aria-hidden="true" /> Costo de envío por confirmar. Se paga por separado.</p>
+        <p class="mt-2"><Truck size={17} class="inline" aria-hidden="true" /> El envío se paga por separado al transportista.</p>
       </aside>
     </div>
-    <noscript><p>Activa JavaScript para revisar tu bolsa y enviar la solicitud.</p></noscript>
+    <noscript><p>Activa JavaScript para revisar tu bolsa y continuar al pago.</p></noscript>
   </section>
 </Base>
 <script>

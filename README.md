@@ -2,7 +2,7 @@
 
 Tienda en español para Perú, enfocada en perfumes árabes. Los productos del catálogo de muestra tienen precios de hasta S/ 160. El catálogo se puede filtrar por clima y ocasión. El código usa Astro, TypeScript y Tailwind CSS con Cloudflare Workers, D1 y R2 privado. El adaptador vigente de Astro despliega SSR en Workers. [Documentación de Cloudflare](https://developers.cloudflare.com/workers/framework-guides/web-apps/astro/)
 
-La [vista previa en Cloudflare](https://fragan-us.juarpla.workers.dev/) usa el catálogo de muestra y tiene los cobros desactivados. D1 y R2 ya están vinculados al Worker.
+La [tienda en Cloudflare](https://fragan-us.juarpla.workers.dev/) usa el inventario activo de D1. R2 guarda fotos, comprobantes y el QR de pago.
 
 ## Vista local
 
@@ -20,16 +20,23 @@ Abre `http://127.0.0.1:4321`. En el checkout local usa datos ficticios y una ima
 
 ## Administración
 
-En `/admin` aparecen las solicitudes por confirmar. Consulta la cobertura y el flete con Shalom para la ciudad y agencia indicadas. Registra el importe confirmado y pulsa **Confirmar cobertura, flete y stock**. La confirmación reserva las unidades y habilita el pago. En **En espera de pago**, usa **Enviar confirmación por WhatsApp** para compartir el enlace. Una vez recibido el comprobante, revisa el abono de Yape o Plin en **Pendiente de verificación** y pulsa **Aprobar pago**. Si cancelas una solicitud ya confirmada antes de aprobar el pago, sus unidades vuelven al stock disponible. El enlace **Stock** lleva a las unidades registradas por producto en D1, con su estado de disponibilidad. **Bolsas pendientes** muestra los carritos de quienes autorizaron el contacto por WhatsApp.
+En [/admin](https://fragan-us.juarpla.workers.dev/admin), **Catálogo y stock** permite crear perfumes con su foto, registrar unidades y decidir si se muestran en la tienda. En **QR de pago**, sube la imagen oficial de Yape o Plin. La tienda la muestra en el paso de pago.
 
-## Activar la tienda
+El comprador elige una agencia y continúa al pago. Durante 30 minutos, el pedido reserva las unidades disponibles. Al adjuntar el comprobante, pasa a **Por verificar**. Comprueba el abono en Yape o Plin y pulsa **Verificar y aprobar pago**. Desde **Pagados**, pulsa **Confirmar para empaquetado**. Una vez que el transportista reciba el paquete, pulsa **Marcar como enviado**. El comprador puede consultar el estado con su enlace. El transportista fija y cobra el flete por separado.
 
-1. Vincula D1 y un bucket R2 privado en `wrangler.toml`. Para una base nueva, crea primero las tablas con `npx wrangler d1 execute fraganus-db --remote --file=./schema.sql`. En una base nueva o existente, aplica `npx wrangler d1 migrations apply fraganus-db --remote` antes de desplegar esta versión. Carga tu catálogo con fotos, precios, stock y etiquetas. `seed.sql` contiene datos de muestra para el entorno local.
-2. Sube `public/qr-yape-plin.webp` con tu QR real y añade `PAYMENT_QR_ENABLED = "true"` en las variables de Cloudflare para mostrarlo. Usa `npx wrangler secret put NOMBRE` para configurar `PAYMENT_PHONE` con nueve dígitos, `PAYMENT_RECIPIENT` con el nombre del titular, `ADMIN_USER` y `ADMIN_PASSWORD` con credenciales propias. Para las alertas, configura `TELEGRAM_BOT_TOKEN` y `TELEGRAM_CHAT_ID` de un chat privado.
-3. Cambia `STOREFRONT_PREVIEW` a `"false"` o retírala de `wrangler.toml`. Ejecuta `npm run deploy`. Cuando tengas `fragan.us` en tu cuenta de Cloudflare, vincúlalo como dominio personalizado del Worker.
-4. Desde un celular, valida el flujo con el número y el QR reales. En `/admin` verifica el ingreso y aprueba el pago. Comprueba el stock y el estado usando el código de pedido.
+Si la reserva vence, las unidades vuelven al catálogo. Si el comprador ya pagó, puede adjuntar su comprobante desde el enlace del pedido. Antes de aprobar ese pago, revisa la disponibilidad de los perfumes. **Bolsas pendientes** muestra las bolsas de las personas que optaron por recibir recordatorios y ofertas por WhatsApp.
 
-El cliente solicita el pedido con envío nacional exclusivo por Shalom. El estado del pedido habilita el pago por Yape o Plin después de la confirmación. El flete se paga a Shalom por separado. Las bolsas pendientes se guardan cuando la persona autoriza el contacto por WhatsApp. El pedido histórico con comprobante deduce el stock al aprobarse. Los pedidos nuevos lo reservan al confirmar la cobertura y el flete.
+## Configurar la tienda
+
+1. Vincula D1 y un bucket R2 privado en `wrangler.toml`. En una base nueva, aplica `schema.sql` antes de las migraciones. En una base nueva o existente, ejecuta `npx wrangler d1 migrations apply fraganus-db --remote` antes de desplegar.
+2. Configura `PAYMENT_PHONE` (celular peruano de nueve dígitos), `ADMIN_USER` y `ADMIN_PASSWORD` como secretos del Worker cada uno con `npx wrangler secret put NOMBRE`. Si usas las alertas de Telegram, configura `TELEGRAM_BOT_TOKEN` y `TELEGRAM_CHAT_ID` para un chat privado.
+3. Ejecuta `npm run deploy`. Carga tus perfumes y tu QR oficial desde el panel. `seed.sql` contiene datos para el entorno local.
+
+## Agencias de recojo
+
+[GitHub Actions](https://github.com/Juarpla/fragan-us/actions/workflows/shalom-agencies.yml) consulta cada tres días el [buscador público de Shalom](https://shalom.com.pe/agencias). Guarda las agencias habilitadas para recibir encomiendas y publica el JSON que consume la tienda. Si la consulta falla o devuelve un listado incompleto, conserva el último listado validado. También se puede ejecutar manualmente desde Actions.
+
+La selección usa los códigos de distrito del INEI. La ubicación del comprador es opcional y solo se usa en su navegador. Si no hay agencia en el distrito, la tienda muestra agencias cercanas fuera de ese distrito. [Listado de ubigeos del INEI](https://www.datosabiertos.gob.pe/dataset/c%C3%B3digo-de-ubicaci%C3%B3n-geogr%C3%A1fica-en-el-per%C3%BA-instituto-nacional-de-estad%C3%ADstica-e-inform%C3%A1tica) · [Códigos y nombres](https://github.com/Rodasluis/Peru-maps/blob/f2553240055092daa16ace1eb4ba614d09f1ca56/salida/ubigeos_2026.csv) · [Coordenadas referenciales de capitales distritales](https://github.com/jmcastagnetto/ubigeo-peru-aumentado/blob/a783fa66effb16fa8f3321b49a3d5e71cab15a5c/ubigeo_distrito.csv)
 
 ## Imágenes de la demostración
 

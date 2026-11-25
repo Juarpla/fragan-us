@@ -1,3 +1,4 @@
+import { setupAgencyPicker } from './agency-picker';
 import { money } from '../lib/catalog';
 import type { OrderItem } from '../lib/db';
 import { cartChanged, checkoutId, compactCart, completeCheckout, readCart, sessionId, totalCart } from './cart';
@@ -20,6 +21,8 @@ const totalLabel = root.querySelector<HTMLElement>('[data-checkout-total]')!;
 let total = 0;
 let submitting = false;
 let captureQueue = Promise.resolve();
+const paymentEnabled = root.dataset.mode !== 'unavailable';
+const picker = setupAgencyPicker(form, submit, paymentEnabled);
 
 function render(items: OrderItem[], value: number) {
   total = value;
@@ -70,21 +73,22 @@ function capture() {
 
 form.addEventListener('submit', async event => {
   event.preventDefault();
-  if (submitting || controls.disabled) return;
+  if (submitting || !paymentEnabled || submit.disabled) return;
   const digits = phoneDigits();
   phone.setCustomValidity(/^9\d{8}$/.test(digits) ? '' : 'Ingresa un celular peruano de 9 dígitos.');
   if (!form.reportValidity()) return;
 
   const data = new FormData(form);
   const payload = {
-    name: data.get('name'), phone: digits, city: data.get('city'), address: data.get('address'), shipping: data.get('shipping'),
+    name: data.get('name'), phone: digits, ubigeo: data.get('ubigeo'), agencyId: Number(data.get('agency')), whatsappOffers: resume.checked,
     cart: compactCart(readCart()), checkoutId: checkoutId(), sessionId: sessionId(), expectedTotal: total,
   };
   submitting = true;
   controls.disabled = true;
   edit.disabled = true;
   message.textContent = '';
-  submit.textContent = 'Enviando solicitud…';
+  const submitLabel = submit.innerHTML;
+  submit.textContent = 'Abriendo el pago…';
   try {
     await captureQueue;
     const response = await fetch('/api/orders/create', {
@@ -92,17 +96,18 @@ form.addEventListener('submit', async event => {
     });
     const data: { code?: string; error?: string; quote?: { items: OrderItem[]; total: number } } = await response.json();
     if (data.quote) render(data.quote.items, data.quote.total);
-    if (!response.ok || !data.code) throw new Error(data.error ?? 'No pudimos registrar la solicitud.');
+    if (response.status === 409 && data.error?.startsWith('La agencia')) void picker.reload();
+    if (!response.ok || !data.code) throw new Error(data.error ?? 'No pudimos registrar el pedido.');
     if (checkoutId() === payload.checkoutId) completeCheckout();
-    window.location.assign(`/gracias/${data.code}`);
+    window.location.assign(`/pago/${data.code}`);
   } catch (error) {
     if (checkoutId() !== payload.checkoutId) renderCart();
     message.textContent = error instanceof Error && !(error instanceof SyntaxError) && !(error instanceof TypeError)
-      ? error.message : 'No pudimos registrar la solicitud. Intenta de nuevo.';
+      ? error.message : 'No pudimos registrar el pedido. Intenta de nuevo.';
     submitting = false;
     controls.disabled = false;
     edit.disabled = false;
-    submit.textContent = 'Enviar solicitud';
+    submit.innerHTML = submitLabel;
   }
 });
 phone.addEventListener('input', () => phone.setCustomValidity(''));

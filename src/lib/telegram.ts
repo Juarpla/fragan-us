@@ -38,23 +38,3 @@ export async function sendOrderNotification(env: StoreEnv, order: OrderNotificat
     console.error('Error al notificar el pedido a Telegram.', order.code);
   }
 }
-
-export async function sendRequestNotification(env: StoreEnv, order: Omit<OrderNotification, 'payment' | 'shipping'>) {
-  const token = env.TELEGRAM_BOT_TOKEN;
-  const chat = env.TELEGRAM_CHAT_ID;
-  if (!token || !chat) return;
-  const text = [
-    `Solicitud ${order.code}`, `${order.name} · +51 ${order.phone}`, `${order.city} · Shalom`,
-    money(order.total), order.items.map(item => `${item.quantity} × ${item.name}`).join(', '),
-    'Confirma cobertura, flete y stock en /admin.',
-  ].join('\n');
-  try {
-    const response = await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
-      method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ chat_id: chat, text }), signal: AbortSignal.timeout(8000),
-    });
-    if (!response.ok) console.error('Telegram no pudo recibir la solicitud.', response.status);
-  } catch {
-    console.error('Error al notificar la solicitud a Telegram.', order.code);
-  }
-}

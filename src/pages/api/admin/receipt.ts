@@ -1,10 +1,11 @@
 import type { APIRoute } from 'astro';
-import { adminChallenge, isAdmin, validCode } from '../../../lib/http';
+import { guardAdmin, validCode } from '../../../lib/http';
 import { storeEnv } from '../../../lib/runtime';
 
 export const GET: APIRoute = async ({ request, url }) => {
   const env = storeEnv;
-  if (!isAdmin(request, env)) return adminChallenge();
+  const denied = await guardAdmin(request, env);
+  if (denied) return denied;
   const code = url.searchParams.get('code');
   if (!validCode(code) || !env.DB || !env.RECEIPTS_BUCKET) return new Response('Comprobante no disponible.', { status: 404 });
   const order = await env.DB.prepare('SELECT receipt_r2_key FROM orders WHERE order_code = ?')

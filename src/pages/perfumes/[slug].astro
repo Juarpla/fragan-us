@@ -27,7 +27,10 @@ const related = products.filter(item => item.slug !== product?.slug).slice(0, 4)
         <p>{product.description}</p>
         <p class="detail-stock">{product.stock > 0 ? `${product.stock} ${product.stock === 1 ? 'unidad disponible' : 'unidades disponibles'}` : 'Agotado'}</p>
         <button class="button primary" type="button" data-add={JSON.stringify(product)} disabled={!product.stock}><ShoppingBag size={18} /> Agregar a la bolsa</button>
-        <div class="detail-tags">{[...product.climate, ...product.occasions].map(key => <a href={`/?f=${key}#catalogo`}>{climateLabel[key] ?? occasionLabel[key] ?? key}</a>)}</div>
+        <div class="detail-tags">{[...product.climate, ...product.occasions].map(key => {
+          const label = climateLabel[key] ?? occasionLabel[key];
+          return label && <a href={catalogHref(key, query)}>{label}</a>;
+        })}</div>
       </div>
     </section>
     <section class="note-section" aria-labelledby="notes-title">

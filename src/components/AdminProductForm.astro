@@ -1,0 +1,33 @@
+---
+import { Plus } from '@lucide/astro';
+import { audiences, tones } from '../lib/admin-products';
+import { climateLabel, occasionLabel } from '../lib/catalog';
+---
+<details class="admin-product-entry">
+  <summary><Plus size={18} aria-hidden="true" /> Agregar perfume</summary>
+  <form data-product-form enctype="multipart/form-data">
+    <div class="fields">
+      <label class="field">Nombre<input name="name" minlength="2" maxlength="65" required /></label>
+      <label class="field">Marca<input name="brand" minlength="2" maxlength="45" required /></label>
+      <label class="field">Precio (S/)<input name="price" type="number" min=".01" max="160" step=".01" required /></label>
+      <label class="field">Unidades disponibles<input name="stock" type="number" min="0" max="10000" step="1" required /></label>
+      <label class="field">Volumen (ml)<input name="volume" type="number" min="1" max="2000" step="1" required /></label>
+      <label class="field">Concentración<input name="concentration" maxlength="24" placeholder="Ej. EDP" required /></label>
+      <label class="field">Preferencia<select name="audience" required><option value="">Selecciona</option>{audiences.map(audience => <option>{audience}</option>)}</select></label>
+      <label class="field">Familia olfativa<input name="family" maxlength="60" placeholder="Ej. Amaderado" required /></label>
+      <label class="field span-two">Descripción<textarea name="description" minlength="10" maxlength="500" rows="3" required></textarea></label>
+      <label class="field">Nota de salida<input name="opening" maxlength="130" required /></label>
+      <label class="field">Nota de corazón<input name="heart" maxlength="130" required /></label>
+      <label class="field">Nota de fondo<input name="base" maxlength="130" required /></label>
+      <label class="field">Fondo de la tarjeta<select name="tone">{Object.entries(tones).map(([value, label]) => <option value={value}>{label}</option>)}</select></label>
+      <div class="admin-tags span-two">
+        <fieldset><legend>Clima</legend>{Object.entries(climateLabel).map(([value, label]) => <label><input name="climate" type="checkbox" value={value} /> {label}</label>)}</fieldset>
+        <fieldset><legend>Ocasión</legend>{Object.entries(occasionLabel).map(([value, label]) => <label><input name="occasion" type="checkbox" value={value} /> {label}</label>)}</fieldset>
+      </div>
+      <label class="field span-two">Foto del perfume<input name="photo" type="file" accept="image/jpeg,image/png,image/webp" required /><span class="muted">JPG, PNG o WebP. Hasta 8 MB.</span></label>
+      <label class="consent span-two"><input name="active" type="checkbox" checked /><span>Mostrar en el catálogo</span></label>
+    </div>
+    <div class="checkout-actions"><button class="button primary" type="submit">Guardar perfume</button></div>
+    <p class="error-message" role="alert"></p>
+  </form>
+</details>

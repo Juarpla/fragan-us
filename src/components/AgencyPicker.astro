@@ -1,0 +1,20 @@
+---
+import { LocateFixed } from '@lucide/astro';
+---
+<div class="agency-picker fields span-two" data-agency-picker aria-labelledby="agency-heading">
+  <div class="agency-heading span-two">
+    <h3 id="agency-heading">Agencia de destino</h3>
+    <p>Elige dónde recogerás tu pedido. El transportista fija y cobra el flete.</p>
+  </div>
+  <label class="field">Departamento<select name="department" required disabled></select></label>
+  <label class="field">Provincia<select name="province" required disabled></select></label>
+  <label class="field span-two">Distrito<select name="ubigeo" required disabled></select></label>
+  <div class="agency-location span-two" data-location-panel hidden>
+    <button class="button secondary" type="button" data-use-location><LocateFixed size={17} aria-hidden="true" /> Usar mi ubicación</button>
+    <p>Opcional. Solo se usa aquí para ordenar por cercanía.</p>
+  </div>
+  <p class="agency-status span-two" data-agency-status role="status">Cargando el listado de agencias…</p>
+  <button class="button secondary span-two" type="button" data-reload-agencies hidden>Reintentar carga</button>
+  <label class="field span-two" data-agency-field hidden>Agencia de recojo<select name="agency" required disabled></select></label>
+  <p class="agency-selection span-two" data-agency-selection hidden></p>
+</div>

@@ -1,4 +1,5 @@
 import { sampleCatalog, type Product } from './catalog';
+import { expireReservations } from './orders';
 
 interface ProductRow extends Omit<Product, 'collections' | 'climate' | 'occasions' | 'notes'> {
   collections: string;
@@ -8,17 +9,19 @@ interface ProductRow extends Omit<Product, 'collections' | 'climate' | 'occasion
 }
 
 export async function getCatalog(env?: StoreEnv): Promise<Product[]> {
+  const showSamples = env?.DEMO_MODE === 'true' || env?.STOREFRONT_PREVIEW === 'true';
   if (env?.DB) {
     try {
+      await expireReservations(env.DB);
       const { results } = await env.DB.prepare('SELECT * FROM products WHERE active = 1 ORDER BY position, name').all<ProductRow>();
-      if (results.length > 0 || (env.DEMO_MODE !== 'true' && env.STOREFRONT_PREVIEW !== 'true')) {
+      if (results.length > 0 || !showSamples) {
         return results.map(row => ({ ...row, collections: JSON.parse(row.collections), climate: JSON.parse(row.climate), occasions: JSON.parse(row.occasions), notes: JSON.parse(row.notes) }));
       }
     } catch (error) {
       console.error('No se pudo leer el catálogo D1.', error);
     }
   }
-  return sampleCatalog;
+  return showSamples ? sampleCatalog : [];
 }
 
 export type CartItem = { slug: string; quantity: number };
@@ -38,6 +41,7 @@ export function parseCart(raw: unknown): CartItem[] {
 }
 
 export async function priceCart(db: D1Database, cart: CartItem[]) {
+  await expireReservations(db);
   const placeholders = cart.map(() => '?').join(', ');
   const { results } = await db.prepare(`SELECT slug, name, brand, price_cents, stock, image_url FROM products WHERE active = 1 AND slug IN (${placeholders})`)
     .bind(...cart.map(item => item.slug)).all<Pick<Product, 'slug' | 'name' | 'brand' | 'price_cents' | 'stock' | 'image_url'>>();

@@ -14,24 +14,24 @@ web
 
 ## Product Purpose
 
-FraganUS is a Spanish-language store for Peru focused on imported Arabic perfumes. It helps shoppers find a bottle that suits them or locate one they already want, submit an order request, and track the order through shipping confirmation and payment.
+FraganUS is a Spanish-language store for Peru focused on imported Arabic perfumes. It helps shoppers find a bottle that suits them or locate one they already want, place and pay for an order, and track it through packing and dispatch.
 
 ## Positioning
 
-FraganUS organizes its Arabic perfume catalog around the conditions in which shoppers in Peru will use it. Recommendations cover warm and cool climates, everyday wear, evening events, and gifts. Shoppers who know what they want can search by fragrance name, brand, or scent note.
+FraganUS organizes its Arabic perfume catalog around the conditions in which shoppers in Peru will use it. Recommendations cover warm and cool climates, everyday wear and evening events. Shoppers who know what they want can search by fragrance name, brand, or scent note.
 
 ## Operating Context
 
 - The catalog shows product names, prices in Peruvian soles, bottle size, and scent families. Product pages add scent notes, suggested uses, and available stock.
-- Shoppers explicitly select national shipping by Shalom, the sole delivery option. After receiving the request, the store confirms coverage and freight by WhatsApp and reserves available stock before sharing payment instructions. The transfer covers the products. The shopper pays freight separately to Shalom.
-- Once the request is confirmed, shoppers pay with Yape or Plin and attach an image of the payment receipt. The store verifies the transfer manually. The shopper can track each stage with the order code.
-- Operators verify the transfer before approving payment in the admin interface. New requests reserve units at shipping confirmation. Cancelling before payment approval releases those units. Legacy orders deduct stock at payment approval.
+- Shoppers select a pickup agency in the national Shalom network by department, province, and district. They may use browser location to rank agencies. The transfer pays for the products. The carrier sets and collects the freight separately.
+- Shoppers pay with Yape or Plin, attach a receipt, and track the order with their order code. The store verifies the transfer before confirming the order for packing and dispatch.
+- Operators can add products, manage stock, verify transfers, and mark orders for packing or as dispatched. Checkout reserves stock for 30 minutes while waiting for the receipt.
 
 ## Capabilities and Constraints
 
 - Receipts support JPG, PNG, and WebP up to 8 MB and are stored privately.
-- FraganUS can follow up about a pending bag by WhatsApp when the shopper explicitly opts in.
-- The project is configured with a public catalog preview that disables real purchases. The local checkout supports test orders and test receipts.
+- FraganUS uses WhatsApp for order questions and updates. Shoppers can opt in to offers and pending bag reminders.
+- The public store uses live product inventory. The local checkout supports test orders and test receipts.
 
 ## Brand Commitments
 
@@ -49,5 +49,5 @@ Use the octagonal gem with a centered F as the FraganUS symbol. In the full word
 
 1. Give guided discovery and direct search equal weight.
 2. Explain fragrance in terms shoppers can use to choose, especially scent, weather, and occasion.
-3. Distinguish the product amount from carrier freight and explain when the store will coordinate delivery.
-4. Give shoppers a clear way to check the order from the moment they send the request.
+3. Distinguish the product amount from carrier freight and explain who collects each payment.
+4. Give shoppers a clear way to check the order from the moment they reach payment.
