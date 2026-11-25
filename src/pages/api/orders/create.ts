@@ -26,7 +26,7 @@ export const POST: APIRoute = async ({ request, locals }) => {
   const address = field('address');
   if (name.length < 2 || name.length > 90 || !/^9\d{8}$/.test(phone) || field('shipping') !== 'SHALOM' ||
     city.length < 2 || city.length > 90 || address.length < 2 || address.length > 220) {
-    return json({ error: 'Revisa tus datos y selecciona el envío por Shalom.' }, 400);
+    return json({ error: 'Revisa tus datos y selecciona el envío nacional a agencia.' }, 400);
   }
 
   try {
