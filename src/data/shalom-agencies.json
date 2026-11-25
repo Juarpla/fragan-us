@@ -1,6 +1,6 @@
 {
-  "sourceVersion": "4174",
-  "checkedAt": "2026-11-25T17:34:56.300Z",
+  "sourceVersion": "4175",
+  "checkedAt": "2026-11-25T17:40:00.248Z",
   "agencies": [
     {"id":2,"ubigeo":"060701","name":"BAMBAMARCA","address":"AV. TUPAC AMARU 1105, REFERENCIA: AL COSTADO DEL PARADERO AL CUMBE","latitude":-6.677954,"longitude":-78.525601},
     {"id":3,"ubigeo":"010101","name":"CHACHAPOYAS CO DOS DE MAYO","address":"JR. DOS DE MAYO CDRA. 15 S/N CHACHAPOYAS, REFERENCIA: JUNTO A TERMINAL DE COMBIS ETSA","latitude":-6.238673,"longitude":-77.868008},
