@@ -1,0 +1,28 @@
+---
+import { Plus } from '@lucide/astro';
+import { money, type Product } from '../lib/catalog';
+const { product, catalogQuery = '' } = Astro.props as { product: Product; catalogQuery?: string };
+const { slug, name, brand, stock, price_cents, image_url, volume, concentration, family, tone, badge } = product;
+const detailsHref = `/perfumes/${slug}${catalogQuery}`;
+const tastingNote = product.notes.opening?.split(',')[0]?.trim();
+---
+<article class="product-card">
+  <div class:list={['product-visual', tone]}>
+    <a class="product-image-link" href={detailsHref} aria-label={`Ver ${name} de ${brand}`}>
+      <img src={image_url} alt={`Frasco de ${name} de ${brand}`} width="480" height="480" loading="lazy" />
+    </a>
+    {badge && <span class="product-badge">{badge}</span>}
+  </div>
+  <div class="product-meta">
+    <p class="product-brand">{brand}</p>
+    <h3><a href={detailsHref}>{name}</a></h3>
+    <p class="product-description">{concentration} · {volume} ml <span aria-hidden="true"> / </span> {family}</p>
+    {tastingNote && <p class="product-note">{tastingNote}</p>}
+    <div class="product-bottom">
+      <strong>{money(price_cents)}</strong>
+      <button class="product-add" type="button" aria-label={stock ? `Agregar ${name} a la bolsa` : `${name} agotado`} data-add={JSON.stringify({ slug, name, brand, stock, price_cents, image_url })} disabled={!stock}>
+        {stock ? <><Plus size={16} stroke-width={1.9} aria-hidden="true" /> Agregar</> : 'Agotado'}
+      </button>
+    </div>
+  </div>
+</article>

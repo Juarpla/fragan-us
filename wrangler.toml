@@ -1,0 +1,20 @@
+name = "fraganus"
+main = "@astrojs/cloudflare/entrypoints/server"
+compatibility_date = "2026-11-24"
+compatibility_flags = ["nodejs_compat"]
+
+[vars]
+STOREFRONT_PREVIEW = "true"
+
+[assets]
+binding = "ASSETS"
+directory = "./dist/client"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "fraganus-db"
+database_id = "9829a175-59df-44e2-82b4-f76fb9d66ed2"
+
+[[r2_buckets]]
+binding = "RECEIPTS_BUCKET"
+bucket_name = "fraganus-receipts"

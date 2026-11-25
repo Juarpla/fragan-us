@@ -1,0 +1,45 @@
+---
+import { MapPin } from '@lucide/astro';
+import Brand from '../components/Brand.astro';
+import Header from '../components/Header.astro';
+import CartDrawer from '../components/CartDrawer.astro';
+import { storeEnv } from '../lib/runtime';
+import '../styles/global.css';
+
+interface Props { title?: string; description?: string; minimal?: boolean; privatePage?: boolean; showCart?: boolean; }
+const { title, description = 'Descubre perfumes árabes en Perú y elige tu próxima fragancia según el clima y la ocasión.', minimal = false, privatePage = false, showCart = !minimal } = Astro.props;
+const preview = storeEnv.STOREFRONT_PREVIEW === 'true';
+---
+<!doctype html>
+<html lang="es-PE">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width" />
+    <meta name="description" content={description} />
+    <meta name="theme-color" content="#2b173d" />
+    {(privatePage || preview) && <meta name="robots" content="noindex, nofollow" />}
+    <link rel="icon" type="image/svg+xml" href="/brand/icon.svg" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;650;700;750;800&family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;1,500;1,600&display=swap" rel="stylesheet" />
+    <title>{title ? `${title} | FraganUS` : 'FraganUS | Perfumes árabes en Perú'}</title>
+  </head>
+  <body>
+    <a class="skip-link" href="#contenido">Saltar al contenido</a>
+    <Header minimal={minimal} preview={preview} />
+    <main id="contenido"><slot /></main>
+    <footer class="page-footer">
+      <div class="container footer-main">
+        <div>
+          <Brand placement="footer" />
+          <p>Perfumes elegidos para tus planes en Perú.</p>
+        </div>
+        <nav aria-label="Explorar FraganUS"><strong>Explora</strong><a href="/#catalogo">Perfumes</a><a href="/#climas">Clima y ocasión</a></nav>
+        <nav aria-label="Información de compra"><strong>Tu compra</strong><a href="/#envios">Envíos</a><a href="/privacidad">Privacidad</a></nav>
+        <div class="footer-location"><MapPin size={16} aria-hidden="true" /> Perú</div>
+      </div>
+      <div class="container footer-bottom"><span>© {new Date().getFullYear()} FraganUS</span><span>Precios en soles peruanos (PEN)</span></div>
+    </footer>
+    {showCart && <CartDrawer />}
+  </body>
+</html>

@@ -1,0 +1,29 @@
+---
+import { ArrowRight, ShoppingBag, X } from '@lucide/astro';
+const inCheckout = Astro.url.pathname.replace(/\/$/, '') === '/checkout';
+---
+<dialog class="cart-drawer" id="cart-drawer" aria-labelledby="cart-title">
+  <div class="drawer-shell">
+    <div class="dialog-header"><h2 id="cart-title">Tu bolsa</h2><form method="dialog"><button class="icon-button" aria-label="Cerrar bolsa"><X size={23} /></button></form></div>
+    <div class="drawer-empty" data-drawer-empty>
+      <ShoppingBag size={37} stroke-width={1.25} aria-hidden="true" />
+      <div><h3>Tu bolsa está vacía</h3><p>Encuentra una fragancia para tu próximo plan.</p></div>
+      <a class="button primary" href="/#catalogo">Explorar perfumes <ArrowRight size={18} /></a>
+    </div>
+    <div class="drawer-items" data-drawer-items></div>
+    <div class="drawer-footer" data-drawer-footer hidden>
+      <div class="drawer-total"><span>Total en productos</span><strong data-drawer-total></strong></div>
+      <p>Envío por Shalom. Te confirmaremos el flete antes del pago. El flete se paga a Shalom por separado.</p>
+      {inCheckout ? <><button class="button primary full-width" type="button" data-cart-continue>Volver a la solicitud <ArrowRight size={18} /></button><a class="button secondary full-width" href="/#catalogo">Seguir comprando</a></> :
+        <><a href="/checkout" class="button primary full-width">Solicitar pedido <ArrowRight size={18} /></a><button class="button secondary full-width" type="button" data-cart-continue>Seguir comprando</button></>}
+    </div>
+  </div>
+</dialog>
+<div class="cart-feedback" data-cart-feedback hidden>
+  <p data-cart-feedback-copy></p>
+  <button type="button" class="inline-link" data-cart-open>Ver bolsa</button>
+</div>
+<div class="sr-only" role="status" data-cart-status></div>
+<script>
+  import '../scripts/cart-ui';
+</script>

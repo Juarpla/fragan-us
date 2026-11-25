@@ -1,0 +1,101 @@
+---
+import { ArrowLeft, ArrowRight, Copy } from '@lucide/astro';
+import Base from '../../layouts/Base.astro';
+import { money } from '../../lib/catalog';
+import { checkoutMode, validCode } from '../../lib/http';
+import { isPayable, type OrderRow } from '../../lib/orders';
+import { storeEnv } from '../../lib/runtime';
+
+const code = Astro.params.code;
+const mode = checkoutMode(storeEnv);
+const order = validCode(code) && await storeEnv.DB?.prepare(
+  'SELECT order_code, total_cents, freight_cents, status, is_demo FROM orders WHERE order_code = ?',
+).bind(code).first<Pick<OrderRow, 'order_code' | 'total_cents' | 'freight_cents' | 'status' | 'is_demo'>>();
+Astro.response.headers.set('Cache-Control', 'private, no-store');
+Astro.response.headers.set('Referrer-Policy', 'no-referrer');
+if (!order) Astro.response.status = 404;
+const phone = mode === 'live' ? storeEnv.PAYMENT_PHONE : undefined;
+---
+<Base title="Pagar pedido" minimal privatePage>
+  <section class="container inner-section" data-payment-page>
+    {order && isPayable(order, mode) ? <>
+      <h1 class="inner-title">Paga tu pedido</h1>
+      <p class="inner-copy">Confirmamos el stock, la cobertura de Shalom y el importe de tu flete.</p>
+      {order.is_demo === 1 && <p class="notice">Modo de prueba. Usa un comprobante ficticio.</p>}
+      <div class="panel">
+        <h2>Pago con Yape o Plin</h2>
+        <div class="payment-box">
+          <p class="order-freight"><span>Importe de los perfumes</span><strong>{money(order.total_cents)}</strong></p>
+          {order.freight_cents !== null && <p class="order-freight"><span>Flete por pagar a Shalom</span><strong>{money(order.freight_cents)}</strong></p>}
+          {phone && <>
+            <p>Titular <strong>{storeEnv.PAYMENT_RECIPIENT}</strong></p>
+            <p>Número <strong>{phone}</strong> <button class="inline-link" type="button" data-copy={phone}><Copy size={15} aria-hidden="true" /> Copiar número</button><span role="status" data-copy-status></span></p>
+            {storeEnv.PAYMENT_QR_ENABLED === 'true' && <img src="/qr-yape-plin.webp" alt="Código QR de pago de FraganUS" width="185" height="185" />}
+          </>}
+        </div>
+        <form method="post" action="/api/orders/receipt" enctype="multipart/form-data" data-receipt-form>
+          <input type="hidden" name="code" value={order.order_code} />
+          <div class="fields">
+            <div class="payment-options span-two" role="group" aria-label="Medio que usaste para pagar">
+              <label><input type="radio" name="payment" value="YAPE" required /> Yape</label>
+              <label><input type="radio" name="payment" value="PLIN" required /> Plin</label>
+            </div>
+            <label class="field span-two">Comprobante de pago<input type="file" name="receipt" accept="image/jpeg,image/png,image/webp" required /><span class="muted">JPG, PNG o WebP, hasta 8 MB.</span></label>
+          </div>
+          <div class="checkout-actions">
+            <button type="submit" class="button primary" data-send-receipt>Enviar comprobante <ArrowRight size={17} aria-hidden="true" /></button>
+            <a class="button secondary" href={`/gracias/${order.order_code}`}><ArrowLeft size={16} aria-hidden="true" /> Volver al pedido</a>
+          </div>
+          <p class="error-message" role="alert" data-receipt-error></p>
+        </form>
+      </div>
+    </> : <>
+      <h1 class="inner-title">{order ? 'Consulta el estado de tu pedido' : 'Pedido no encontrado'}</h1>
+      <p class="inner-copy">{order ? 'Revisa el enlace de tu pedido para saber cuál es el siguiente paso.' : 'Revisa el código en el enlace que recibiste.'}</p>
+      <a class="button primary" href={order ? `/gracias/${order.order_code}` : '/'}>{order ? 'Ver estado del pedido' : 'Ir a la tienda'} <ArrowRight size={17} aria-hidden="true" /></a>
+    </>}
+  </section>
+</Base>
+<script>
+  const copy = document.querySelector<HTMLButtonElement>('[data-copy]');
+  copy?.addEventListener('click', async () => {
+    const copyStatus = document.querySelector('[data-copy-status]')!;
+    try {
+      await navigator.clipboard.writeText(copy.dataset.copy!);
+      copyStatus.textContent = ' Número copiado.';
+    } catch {
+      copyStatus.textContent = ' Selecciona el número para copiarlo.';
+    }
+  });
+
+  const form = document.querySelector<HTMLFormElement>('[data-receipt-form]');
+  const submit = form?.querySelector<HTMLButtonElement>('[data-send-receipt]');
+  const message = form?.querySelector<HTMLElement>('[data-receipt-error]');
+  form?.addEventListener('submit', async event => {
+    event.preventDefault();
+    if (!submit || !message || submit.disabled) return;
+    const body = new FormData(form);
+    const receipt = body.get('receipt');
+    if (!(receipt instanceof File) || !receipt.size || receipt.size > 8 * 1024 * 1024) {
+      message.textContent = 'Adjunta una imagen JPG, PNG o WebP de hasta 8 MB.';
+      return;
+    }
+    submit.disabled = true;
+    submit.textContent = 'Enviando comprobante…';
+    message.textContent = '';
+    try {
+      const response = await fetch('/api/orders/receipt', { method: 'POST', body });
+      const data = await response.json<{ code?: string; error?: string }>().catch(() => ({} as { code?: string; error?: string }));
+      if (!response.ok || !data.code) {
+        message.textContent = data.error ?? 'No pudimos registrar el comprobante. Intenta de nuevo.';
+      } else {
+        location.assign(`/gracias/${data.code}`);
+        return;
+      }
+    } catch {
+      message.textContent = 'No pudimos registrar el comprobante. Intenta de nuevo.';
+    }
+    submit.disabled = false;
+    submit.textContent = 'Enviar comprobante';
+  });
+</script>

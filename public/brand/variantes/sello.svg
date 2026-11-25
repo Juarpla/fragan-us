@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" color="#6c35ac">
+  <g id="mark">
+    <path fill="currentColor" fill-rule="evenodd" d="M14.6 3.9a2 2 0 0 1 2.8 0l10.7 10.7a2 2 0 0 1 0 2.8L17.4 28.1a2 2 0 0 1-2.8 0L3.9 17.4a2 2 0 0 1 0-2.8L14.6 3.9Zm-2.1 6.2h8v2.35h-5.4v2.84h4.25v2.23H15.1V22h-2.6V10.1Z"/>
+  </g>
+</svg>

@@ -1,0 +1,47 @@
+---
+import { ArrowRight, CircleCheck, RefreshCw } from '@lucide/astro';
+import Base from '../../layouts/Base.astro';
+import { money } from '../../lib/catalog';
+import { checkoutMode, validCode } from '../../lib/http';
+import { isPayable, statusLabel, type OrderRow } from '../../lib/orders';
+import { storeEnv } from '../../lib/runtime';
+
+const code = Astro.params.code;
+type OrderStatus = Pick<OrderRow, 'order_code' | 'total_cents' | 'freight_cents' | 'status' | 'is_demo'>;
+const order = validCode(code) && await storeEnv.DB?.prepare('SELECT order_code, total_cents, freight_cents, status, is_demo FROM orders WHERE order_code = ?')
+  .bind(code).first<OrderStatus>();
+if (!order) Astro.response.status = 404;
+Astro.response.headers.set('Cache-Control', 'private, no-store');
+Astro.response.headers.set('Referrer-Policy', 'no-referrer');
+const message: Record<string, string> = {
+  PENDING_CONFIRMATION: 'Revisaremos stock, cobertura y flete con Shalom. Cuando confirmemos tu solicitud, podrás pagar desde este enlace.',
+  AWAITING_PAYMENT: 'Confirmamos la disponibilidad de tus perfumes y el flete de Shalom. Ya puedes pagar los productos.',
+  PENDING_VERIFICATION: 'Recibimos tu comprobante. Revisaremos el pago y coordinaremos el envío por WhatsApp.',
+  PAID: 'Verificamos tu pago. Coordinaremos contigo el envío por WhatsApp.',
+  SHIPPED: 'Tu pedido ya fue enviado.',
+  CANCELLED: 'El pedido fue cancelado.',
+};
+const payable = order && isPayable(order, checkoutMode(storeEnv));
+---
+<Base title="Estado del pedido" minimal privatePage>
+  <section class="container inner-section">
+    {order ? <div class="order-result">
+      <CircleCheck size={39} stroke-width={1.6} class="text-purple-700" aria-hidden="true" />
+      <h1 class="inner-title">{order.status === 'PENDING_CONFIRMATION' ? 'Recibimos tu solicitud' : 'Estado de tu pedido'}</h1>
+      {order.is_demo === 1 && <p class="notice">Pedido de prueba.</p>}
+      <p class="inner-copy">{message[order.status]}</p>
+      <div class="panel">
+        <p class="muted">Código del pedido</p><code class="order-code">{order.order_code}</code>
+        <p class="mt-3"><strong>{statusLabel[order.status]}</strong></p>
+        <p class="order-freight"><span>Total en productos</span><strong>{money(order.total_cents)}</strong></p>
+        {order.status !== 'CANCELLED' && order.freight_cents !== null && <p class="order-freight"><span>Flete por pagar a Shalom</span><strong>{money(order.freight_cents)}</strong></p>}
+        <p class="muted mt-2">Guarda el enlace para consultar el estado.</p>
+      </div>
+      <div class="checkout-actions">
+        {payable ? <a class="button primary" href={`/pago/${order.order_code}`}>Continuar al pago <ArrowRight size={17} aria-hidden="true" /></a> :
+          <a class="button primary" href="/#catalogo">Volver a la tienda <ArrowRight size={17} aria-hidden="true" /></a>}
+        <a class="button secondary" href={`/gracias/${order.order_code}`}>Actualizar estado <RefreshCw size={16} aria-hidden="true" /></a>
+      </div>
+    </div> : <div><h1 class="inner-title">Pedido no encontrado</h1><p class="inner-copy">Revisa el código del enlace de confirmación.</p><a class="button primary" href="/">Ir a la tienda <ArrowRight size={17} aria-hidden="true" /></a></div>}
+  </section>
+</Base>

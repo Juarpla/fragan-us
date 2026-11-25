@@ -1,0 +1,29 @@
+{
+  "name": "fraganus",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "astro dev",
+    "build": "astro build",
+    "check": "astro check",
+    "db:local": "wrangler d1 execute fraganus-db --local --file=./schema.sql && npm run db:upgrade:local",
+    "db:seed": "wrangler d1 execute fraganus-db --local --file=./seed.sql",
+    "preview": "wrangler dev",
+    "deploy": "npm run build && wrangler deploy",
+    "db:upgrade:local": "wrangler d1 migrations apply fraganus-db --local"
+  },
+  "dependencies": {
+    "@astrojs/cloudflare": "^14.4.9",
+    "@lucide/astro": "^1.79.0",
+    "@tailwindcss/vite": "^4.1.0",
+    "astro": "^7.4.13",
+    "tailwindcss": "^4.1.0"
+  },
+  "devDependencies": {
+    "@astrojs/check": "^0.9.4",
+    "@cloudflare/workers-types": "^5.20261124.2",
+    "typescript": "^5.9.2",
+    "wrangler": "^4.168.0"
+  }
+}

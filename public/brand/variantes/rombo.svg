@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" color="#6c35ac">
+  <g id="mark">
+    <path d="M16 3 29 16 16 29 3 16 16 3Z" fill="none" stroke="currentColor" stroke-width="1.55" stroke-linejoin="round"/>
+    <path d="M11.8 10.1h8.8v2.6h-.85l-.75-1.5h-3.56v3.9h2.7l.5-.98h.82v3.1h-.82l-.5-.98h-2.7v4.19l1.55.68v.76H11.8v-.76l1.42-.68v-8.88l-1.42-.67v-.78Z" fill="currentColor"/>
+  </g>
+</svg>

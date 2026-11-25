@@ -1,0 +1,141 @@
+---
+import { ArrowUpRight } from '@lucide/astro';
+import Base from '../../layouts/Base.astro';
+import { money, sampleCatalog, type Product } from '../../lib/catalog';
+import { adminChallenge, isAdmin, shippingLabels } from '../../lib/http';
+import { orderItems, statusLabel, type CartRow, type OrderRow } from '../../lib/orders';
+import { storeEnv } from '../../lib/runtime';
+
+if (!isAdmin(Astro.request, storeEnv)) return adminChallenge();
+Astro.response.headers.set('Cache-Control', 'private, no-store');
+Astro.response.headers.set('Referrer-Policy', 'no-referrer');
+
+type StockRow = Pick<Product, 'slug' | 'name' | 'brand' | 'stock'> & { active: number };
+
+const db = storeEnv.DB;
+if (!db) return new Response('Base de datos no disponible.', { status: 503 });
+
+const selected = Astro.url.searchParams.get('estado') ?? 'PENDING_CONFIRMATION';
+const filter = Object.hasOwn(statusLabel, selected) ? selected : 'PENDING_CONFIRMATION';
+const page = Math.max(1, Math.min(5000, Number(Astro.url.searchParams.get('p')) || 1)) | 0;
+const limit = 25;
+const [orderResult, cartResult, stockResult] = await Promise.all([
+  db.prepare('SELECT * FROM orders WHERE status = ? ORDER BY created_at DESC, order_code DESC LIMIT ? OFFSET ?')
+    .bind(filter, limit + 1, (page - 1) * limit).all<OrderRow>(),
+  db.prepare("SELECT * FROM abandoned_carts WHERE status = 'ABANDONED' ORDER BY updated_at DESC LIMIT 30").all<CartRow>(),
+  db.prepare('SELECT slug, name, brand, stock, active FROM products ORDER BY active DESC, position, name').all<StockRow>(),
+]);
+const orders = orderResult.results.slice(0, limit);
+const carts = cartResult.results;
+const showingSample = storeEnv.STOREFRONT_PREVIEW === 'true' && stockResult.results.length === 0;
+const stock = showingSample ? sampleCatalog.map(product => ({ ...product, active: 1 })) : stockResult.results;
+const wa = (phone: string) => `https://wa.me/51${phone}`;
+const sendConfirmation = (order: OrderRow) => {
+  const link = new URL(`/gracias/${order.order_code}`, Astro.url.origin);
+  const freight = money(order.freight_cents ?? 0);
+  const message = `Hola, confirmamos tu pedido ${order.order_code}. El total de los perfumes es ${money(order.total_cents)} y el flete es ${freight}, pagadero a Shalom. Puedes pagar los perfumes desde ${link}`;
+  return `${wa(order.customer_phone)}?text=${encodeURIComponent(message)}`;
+};
+---
+<Base title="Administración" minimal privatePage>
+  <section class="container inner-section">
+    <p class="eyebrow"><span></span> FRAGANUS</p><h1 class="inner-title">Administración</h1>
+    <nav class="filters mb-4" aria-label="Secciones de administración">
+      <a class="filter" href="#order-list">Pedidos</a>
+      <a class="filter" href="#stock">Stock</a>
+      <a class="filter" href="#cart-list">Bolsas pendientes</a>
+    </nav>
+    <div class="admin-stack">
+      <section class="panel" aria-labelledby="order-list">
+        <h2 id="order-list">Pedidos</h2>
+        <nav class="filters mb-3" aria-label="Estados de pedido">{Object.entries(statusLabel).map(([status, label]) =>
+          <a class:list={['filter', status === filter && 'selected']} aria-current={status === filter ? 'page' : undefined} href={`/admin?estado=${status}`}>{label}</a>)}</nav>
+        {orders.length ? orders.map(order => <article class="admin-record">
+          <div>
+            <strong>{order.order_code} · {money(order.total_cents)}{order.payment_method && ` · ${order.payment_method}`}</strong>
+            {order.is_demo === 1 && <span> · Prueba</span>}
+            <p>{order.customer_name} · +51 {order.customer_phone}</p>
+            <p>{order.city} · {shippingLabels[order.shipping_method]} · {order.shipping_address}</p>
+            {order.freight_cents !== null && <p>Flete confirmado {money(order.freight_cents)}</p>}
+            <ul>{orderItems(order.items_json).map(item => <li>{item.quantity} × {item.name}</li>)}</ul>
+            <p class="muted">{order.created_at} UTC</p>
+          </div>
+          <div class="admin-record-actions">
+            {order.is_demo !== 1 && <a class="inline-link" href={order.status === 'AWAITING_PAYMENT' ? sendConfirmation(order) : wa(order.customer_phone)} rel="noreferrer" target="_blank">{order.status === 'AWAITING_PAYMENT' ? 'Enviar confirmación por WhatsApp' : 'WhatsApp'} <ArrowUpRight size={15} aria-hidden="true" /></a>}
+            {order.receipt_r2_key && <a class="button secondary" href={`/api/admin/receipt?code=${order.order_code}`} rel="noreferrer" target="_blank">Ver comprobante</a>}
+            {order.status === 'PENDING_CONFIRMATION' && <form class="admin-confirm" data-confirm-order={order.order_code}>
+              <label class="field">Flete confirmado (S/)<input name="freight" type="number" min="0" max="9999.99" step=".01" required /></label>
+              <button class="button primary" type="submit">Confirmar cobertura, flete y stock</button>
+            </form>}
+            {order.status === 'PENDING_VERIFICATION' && <button class="button primary" data-order={order.order_code} data-action="pay">Aprobar pago</button>}
+            {['PENDING_CONFIRMATION', 'AWAITING_PAYMENT', 'PENDING_VERIFICATION'].includes(order.status) && <button class="button secondary" data-order={order.order_code} data-action="cancel">Cancelar</button>}
+            {order.status === 'PAID' && <button class="button primary" data-order={order.order_code} data-action="ship">Marcar enviado</button>}
+          </div>
+          <p class="error-message w-full" role="alert"></p>
+        </article>) : <p class="muted">No hay pedidos en este estado.</p>}
+        {(page > 1 || orderResult.results.length > limit) && <nav class="checkout-actions" aria-label="Páginas de pedidos">
+          {page > 1 && <a class="button secondary" href={`/admin?estado=${filter}&p=${page - 1}`}>Anterior</a>}
+          {orderResult.results.length > limit && <a class="button secondary" href={`/admin?estado=${filter}&p=${page + 1}`}>Siguiente</a>}
+        </nav>}
+      </section>
+      <section class="panel" aria-labelledby="stock">
+        <h2 id="stock">Stock de productos</h2>
+        {showingSample && <p class="notice">Estas cantidades son de muestra. Aún no hay inventario cargado en la tienda.</p>}
+        {stock.length ? (
+          <table class="stock-table">
+            <thead><tr><th scope="col">Perfume</th><th scope="col">Unidades</th><th scope="col">Estado</th></tr></thead>
+            <tbody>{stock.map(product => (
+              <tr>
+                <th scope="row"><span>{product.name}</span><span class="muted">{product.brand}</span></th>
+                <td class="stock-units">{product.stock}</td>
+                <td>{!product.active ? 'Inactivo' : product.stock ? 'Disponible' : 'Agotado'}</td>
+              </tr>
+            ))}</tbody>
+          </table>
+        ) : <p class="muted">Aún no hay productos en el inventario.</p>}
+      </section>
+      <section class="panel" aria-labelledby="cart-list">
+        <h2 id="cart-list">Bolsas pendientes</h2>
+        {carts.length ? carts.map(cart => <article class="admin-record">
+          <div><strong>{cart.customer_name || 'Cliente'} · {money(cart.total_cents)}</strong><p>+51 {cart.customer_phone}</p><p>{orderItems(cart.items_json).map(item => `${item.quantity} × ${item.name}`).join(', ')}</p><p class="muted">{cart.updated_at} UTC</p></div>
+          {storeEnv.DEMO_MODE !== 'true' && <a class="inline-link" href={wa(cart.customer_phone)} rel="noreferrer" target="_blank">Contactar por WhatsApp <ArrowUpRight size={15} /></a>}
+        </article>) : <p class="muted">No hay bolsas pendientes con autorización de contacto.</p>}
+      </section>
+    </div>
+  </section>
+</Base>
+<script>
+  async function changeOrder(record: HTMLElement, code: string, action: string, freightCents?: number) {
+    const message = record.querySelector<HTMLElement>('[role=alert]')!;
+    const buttons = [...record.querySelectorAll('button')];
+    if (action === 'cancel' && !window.confirm('¿Cancelar este pedido?')) return;
+    message.textContent = '';
+    buttons.forEach(control => { control.disabled = true; });
+    try {
+      const response = await fetch('/api/orders/verify', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ code, action, freightCents }),
+      });
+      if (!response.ok) {
+        const error = await response.json<{ error?: string }>().catch(() => ({ error: undefined }));
+        throw new Error(error.error ?? 'No se pudo actualizar el pedido.');
+      }
+      if (action === 'confirm') location.assign('/admin?estado=AWAITING_PAYMENT');
+      else location.reload();
+    } catch (error) {
+      message.textContent = error instanceof Error ? error.message : 'No se pudo actualizar el pedido.';
+      buttons.forEach(control => { control.disabled = false; });
+    }
+  }
+
+  document.querySelectorAll<HTMLFormElement>('[data-confirm-order]').forEach(form => {
+    form.addEventListener('submit', event => {
+      event.preventDefault();
+      const freight = form.elements.namedItem('freight') as HTMLInputElement;
+      void changeOrder(form.closest('article')!, form.dataset.confirmOrder!, 'confirm', Math.round(freight.valueAsNumber * 100));
+    });
+  });
+  document.querySelectorAll<HTMLButtonElement>('[data-order]').forEach(button => {
+    button.addEventListener('click', () => void changeOrder(button.closest('article')!, button.dataset.order!, button.dataset.action!));
+  });
+</script>
