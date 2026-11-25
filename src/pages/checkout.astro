@@ -9,36 +9,44 @@ const mode = checkoutMode(storeEnv);
 Astro.response.headers.set('Cache-Control', 'no-store');
 ---
 <Base title="Finalizar compra" minimal privatePage showCart>
-  <section class="container inner-section" data-checkout data-mode={mode}>
-    <h1 class="inner-title">Finaliza tu compra</h1>
-    <p class="inner-copy">Elige tu agencia de destino y continúa al pago de los perfumes.</p>
+  <section class="container inner-section checkout" data-checkout data-mode={mode}>
+    <h1 class="checkout-title">Finaliza tu compra</h1>
     {mode === 'demo' && <p class="notice">Modo de prueba. Usa datos ficticios. No realices un pago.</p>}
     {mode === 'unavailable' && <p class="notice">El pago en línea aún no está habilitado.</p>}
     <div class="empty-card" data-checkout-empty hidden><h2>Tu bolsa está vacía</h2><p>Agrega un perfume para continuar.</p><a href="/#catalogo" class="button primary">Ver perfumes <ArrowRight size={17} aria-hidden="true" /></a></div>
     <div class="checkout-grid" data-checkout-content hidden>
-      <div class="panel">
-        <h2>Datos de envío</h2>
-        <form data-order-form>
-          <fieldset>
+      <aside class="panel checkout-aside" aria-labelledby="checkout-summary">
+        <div class="checkout-summary-heading"><h2 id="checkout-summary">Tu bolsa</h2><button type="button" class="inline-link" data-cart-open>Editar bolsa</button></div>
+        <div class="checkout-list" data-checkout-list></div>
+        <div class="checkout-total"><strong>Total en productos</strong><strong data-checkout-total></strong></div>
+        <p class="checkout-freight"><Truck size={17} aria-hidden="true" /> <span>El transportista fija el costo del envío y lo cobra por separado.</span></p>
+      </aside>
+      <form class="panel checkout-form" data-order-form>
+        <fieldset>
+          <section class="checkout-group" aria-labelledby="checkout-contact">
+            <h2 id="checkout-contact">Datos de contacto</h2>
             <div class="fields">
               <label class="field">Nombre completo<input name="name" autocomplete="name" maxlength="90" minlength="2" required /></label>
               <label class="field">WhatsApp<input name="phone" type="tel" autocomplete="tel-national" inputmode="tel" maxlength="17" placeholder="987 654 321" required /></label>
-              <AgencyPicker />
-              <p class="checkout-contact span-two">Usaremos tu WhatsApp para consultas sobre el pedido y para avisarte de su estado.</p>
-              <label class="consent span-two"><input type="checkbox" name="resume" /><span>Quiero recibir ofertas de FraganUS y recordatorios de mi bolsa por WhatsApp. <a href="/privacidad">Ver privacidad</a>.</span></label>
             </div>
-            <p class="checkout-terms" id="request-terms">Paga por Yape o Plin y sube el comprobante. Cuando verifiquemos el abono, confirmaremos tu pedido para prepararlo y enviarlo.</p>
-            <div class="checkout-actions"><button class="button primary" type="submit" data-confirm aria-describedby="request-terms" disabled>Continuar al pago <ArrowRight size={17} aria-hidden="true" /></button></div>
-          </fieldset>
-          <p class="error-message" data-checkout-error role="alert"></p>
-        </form>
-      </div>
-      <aside class="panel checkout-aside">
-        <div class="checkout-summary-heading"><h2>Tu bolsa</h2><button type="button" class="inline-link" data-cart-open>Editar bolsa</button></div>
-        <div class="checkout-list" data-checkout-list></div>
-        <div class="checkout-total"><strong>Total en productos</strong><strong data-checkout-total></strong></div>
-        <p class="mt-2"><Truck size={17} class="inline" aria-hidden="true" /> El envío se paga por separado al transportista.</p>
-      </aside>
+          </section>
+          <AgencyPicker />
+          <div class="checkout-group checkout-finish">
+            <div class="checkout-preferences">
+              <label class="checkout-consent">
+                <input type="checkbox" name="resume" />
+                <span>Por WhatsApp te mantendremos al tanto de tu pedido y, si marcas la casilla, te enviaremos ofertas y recordatorios de tu bolsa.</span>
+              </label>
+              <a href="/privacidad">Ver política de privacidad</a>
+            </div>
+            <div class="checkout-next">
+              <p id="request-terms">Paga por Yape o Plin y sube tu comprobante. Confirmaremos el pedido al verificar el pago.</p>
+              <button class="button primary" type="submit" data-confirm aria-describedby="request-terms" disabled>Continuar al pago <ArrowRight size={17} aria-hidden="true" /></button>
+              <p class="error-message checkout-error" data-checkout-error role="alert"></p>
+            </div>
+          </div>
+        </fieldset>
+      </form>
     </div>
     <noscript><p>Activa JavaScript para revisar tu bolsa y continuar al pago.</p></noscript>
   </section>

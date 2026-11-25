@@ -92,7 +92,7 @@ export function setupAgencyPicker(form: HTMLFormElement, submit: HTMLButtonEleme
   }
 
   function showDistricts(keep = false) {
-    optionSet(district, 'Selecciona un distrito', sortedEntries([...districts.values()]
+    optionSet(district, 'Selecciona', sortedEntries([...districts.values()]
       .filter(row => province.value && row[0].startsWith(province.value)).map(row => [row[0], row[3]])), keep);
     showAgencies(keep);
   }
@@ -102,7 +102,7 @@ export function setupAgencyPicker(form: HTMLFormElement, submit: HTMLButtonEleme
     for (const [code, , label] of districts.values()) {
       if (department.value && code.startsWith(department.value)) options.set(code.slice(0, 4), label);
     }
-    optionSet(province, 'Selecciona una provincia', sortedEntries([...options]), keep);
+    optionSet(province, 'Selecciona', sortedEntries([...options]), keep);
     showDistricts(keep);
   }
 
@@ -120,7 +120,7 @@ export function setupAgencyPicker(form: HTMLFormElement, submit: HTMLButtonEleme
       agencies = data.agencies;
       districts = new Map(data.districts.map(row => [row[0], row]));
       const options = new Map([...districts.values()].map(row => [row[0].slice(0, 2), row[1]]));
-      optionSet(department, 'Selecciona un departamento', sortedEntries([...options]), true);
+      optionSet(department, 'Selecciona', sortedEntries([...options]), true);
       showProvinces(true);
       submit.disabled = !paymentEnabled;
     } catch {
