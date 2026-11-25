@@ -2,7 +2,7 @@
 
 Tienda en español para Perú, enfocada en perfumes árabes. Los productos del catálogo de muestra tienen precios de hasta S/ 160. El catálogo se puede filtrar por clima y ocasión. El código usa Astro, TypeScript y Tailwind CSS con Cloudflare Workers, D1 y R2 privado. El adaptador vigente de Astro despliega SSR en Workers. [Documentación de Cloudflare](https://developers.cloudflare.com/workers/framework-guides/web-apps/astro/)
 
-La [vista previa en Cloudflare](https://fraganus.juarpla.workers.dev/) usa el catálogo de muestra y tiene los cobros desactivados. D1 y R2 ya están vinculados al Worker.
+La [vista previa en Cloudflare](https://fragan-us.juarpla.workers.dev/) usa el catálogo de muestra y tiene los cobros desactivados. D1 y R2 ya están vinculados al Worker.
 
 ## Vista local
 

@@ -15,11 +15,6 @@ const matches = products.filter(product => {
   return (!filter || tags.includes(filter)) && (!query || terms(query).split(/\s+/).every(word => searchable.includes(word)));
 });
 const filterIcons = { calido: Sun, fresco: Snowflake, diario: Wind, noche: MoonStar, regalo: Gift };
-const featured = [
-  { name: 'Odyssey Mandarin Sky', brand: 'Armaf', photo: 'odyssey-mandarin-sky.jpg', size: 720, tone: 'mandarin' },
-  { name: 'Khamrah', brand: 'Lattafa', photo: 'khamrah.webp', size: 400, tone: 'amber' },
-  { name: 'Hawas for Him', brand: 'Rasasi', photo: 'hawas-for-him.jpg', size: 720, tone: 'lilac' },
-];
 ---
 <Base>
   <section class="hero container" aria-labelledby="hero-title">
@@ -31,18 +26,13 @@ const featured = [
         <a class="button secondary" href={catalogHref(filter, query, 'climas')}>Elegir por clima <ArrowDown size={17} aria-hidden="true" /></a>
       </div>
     </div>
-    <figure class="hero-featured" aria-label="Perfumes destacados">
-      {featured.map(({ brand, name, photo, size, tone }) =>
-        <div class:list={['featured-perfume', `featured-${tone}`]}>
-          <img src={`/brand/destacados/${photo}`} alt={`Frasco y caja de ${name} de ${brand}`} width={size} height={size} />
-          <div class="featured-name" aria-hidden="true"><span>{brand}</span><strong>{name}</strong></div>
-        </div>
-      )}
-    </figure>
+    <div class="hero-photo">
+      <img src="/brand/hero-perfumes.webp" alt="Tres perfumes sobre piedra malva: Odyssey Mandarin Sky de Armaf, Khamrah de Lattafa y Hawas for Him de Rasasi." width="1448" height="1086" fetchpriority="high" />
+    </div>
   </section>
 
   <div class="container assurances" aria-label="Información de compra">
-    <div><span class="assurance-icon"><Truck size={21} stroke-width={1.7} aria-hidden="true" /></span><div><strong>Envíos a todo el Perú</strong><p>Exclusivamente por Shalom</p></div></div>
+    <div><span class="assurance-icon"><Truck size={21} stroke-width={1.7} aria-hidden="true" /></span><div><strong>Envíos a todo el Perú</strong><p class="assurance-shipping">Llegamos por Shalom</p></div></div>
     <div><span class="assurance-icon"><CreditCard size={21} stroke-width={1.7} aria-hidden="true" /></span><div><strong>Pago con Yape o Plin</strong><p>Después de confirmar tu pedido</p></div></div>
     <div><span class="assurance-icon"><Sparkles size={21} stroke-width={1.7} aria-hidden="true" /></span><div><strong>Selección por clima y ocasión</strong><p>Encuentra un aroma para tu plan</p></div></div>
   </div>
