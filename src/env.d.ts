@@ -4,6 +4,7 @@ interface StoreEnv {
   DEMO_MODE?: string;
   STOREFRONT_PREVIEW?: string;
   PAYMENT_PHONE?: string;
+  SUPPORT_WHATSAPP?: string;
   ADMIN_LOGIN_LIMIT?: RateLimit;
   ADMIN_USER?: string;
   ADMIN_PASSWORD?: string;

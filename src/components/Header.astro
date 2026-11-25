@@ -1,39 +1,59 @@
 ---
 import { ArrowRight, Menu, Search, ShoppingBag, Sparkles, Truck, X } from '@lucide/astro';
-import { catalogHref, catalogSelection } from '../lib/catalog-filters';
 import Brand from './Brand.astro';
-const { filter, query } = catalogSelection(Astro.url.searchParams);
+const path = Astro.url.pathname.replace(/\/$/, '') || '/';
+const links = [
+  { href: '/', label: 'Inicio' },
+  { href: '/perfumes', label: 'Perfumes' },
+  { href: '/envios', label: 'Envíos' },
+];
+const current = (href: string) => path === href ? 'page' : href === '/perfumes' && path.startsWith('/perfumes/') ? 'location' : undefined;
 const { minimal = false, preview = false } = Astro.props;
 ---
-{preview && !import.meta.env.DEV ? <div class="announcement"><Sparkles size={15} aria-hidden="true" /> <span>Vista previa · Catálogo de muestra · Compras desactivadas</span></div> : !minimal && <div class="announcement"><Truck size={15} aria-hidden="true" /> <span>Envíos a todo el Perú por Shalom</span></div>}
-<header class="site-header">
-  <div class="container header-inner">
-    {!minimal && <button class="icon-button mobile-menu" type="button" aria-label="Abrir menú" aria-controls="mobile-nav" aria-expanded="false" data-menu-open><Menu size={23} /></button>}
-    <Brand placement="header" />
-    {!minimal && <nav class="main-nav" aria-label="Navegación principal">
-      <a class="nav-active" href={catalogHref(filter, query)}>Perfumes</a>
-      <a href={catalogHref(filter, query, 'climas')}>Por clima</a>
-      <a href={catalogHref(filter, query, 'ocasiones')}>Por ocasión</a>
-      <a href="/#envios">Envíos</a>
+<div class:list={['header-shell', !minimal && 'header-sticky']} data-sticky-header={!minimal || undefined}>
+  {preview && !import.meta.env.DEV ? <div class="announcement"><Sparkles size={15} aria-hidden="true" /> <span>Vista previa · Catálogo de muestra · Compras desactivadas</span></div> : !minimal && <div class="announcement"><Truck size={15} aria-hidden="true" /> <a href="/envios">Envíos a todo el Perú</a></div>}
+  <header class="site-header">
+    <div class="container header-inner">
+      {!minimal && <button class="icon-button mobile-menu" type="button" aria-label="Abrir menú" aria-controls="mobile-nav" aria-expanded="false" data-menu-open><Menu size={23} /></button>}
+      <Brand placement="header" />
+      {!minimal && <nav class="main-nav" aria-label="Navegación principal">
+        {links.map(({ href, label }) => <a class:list={[current(href) && 'nav-active']} href={href} aria-current={current(href)}>{label}</a>)}
+      </nav>}
+      {!minimal ? <div class="header-actions">
+        <button class="icon-button" type="button" aria-label="Buscar perfumes" data-search-open><Search size={22} stroke-width={1.7} /></button>
+        <button class="icon-button bag-button" type="button" aria-label="Abrir bolsa" data-cart-open><ShoppingBag size={22} stroke-width={1.7} /><span data-cart-count>0</span></button>
+      </div> : <a class="inline-link header-back" href="/">Volver a la tienda <ArrowRight size={16} /></a>}
+    </div>
+    {!minimal && <nav id="mobile-nav" class="mobile-nav" aria-label="Navegación móvil" hidden>
+      {links.map(({ href, label }) => <a href={href} aria-current={current(href)}>{label}</a>)}
     </nav>}
-    {!minimal ? <div class="header-actions">
-      <button class="icon-button" type="button" aria-label="Buscar perfumes" data-search-open><Search size={22} stroke-width={1.7} /></button>
-      <button class="icon-button bag-button" type="button" aria-label="Abrir bolsa" data-cart-open><ShoppingBag size={22} stroke-width={1.7} /><span data-cart-count>0</span></button>
-    </div> : <a class="inline-link header-back" href={catalogHref(filter, query)}>Volver a la tienda <ArrowRight size={16} /></a>}
-  </div>
-  {!minimal && <nav id="mobile-nav" class="mobile-nav" aria-label="Navegación móvil" hidden>
-    <a href={catalogHref(filter, query)}>Perfumes</a><a href={catalogHref(filter, query, 'climas')}>Por clima</a><a href={catalogHref(filter, query, 'ocasiones')}>Por ocasión</a><a href="/#envios">Envíos</a>
-  </nav>}
-</header>
+  </header>
+</div>
 {!minimal && <dialog class="search-dialog" id="search-dialog" aria-labelledby="search-title">
   <div class="dialog-header"><h2 id="search-title">Buscar perfumes</h2><form method="dialog"><button class="icon-button" aria-label="Cerrar búsqueda"><X size={22} /></button></form></div>
-  <form class="search-form" action="/#catalogo">
+  <form class="search-form" action="/perfumes">
     <label class="sr-only" for="store-search">Nombre, marca o nota olfativa</label>
     <input type="search" id="store-search" name="q" placeholder="Nombre, marca o nota olfativa" maxlength="80" required autofocus />
     <button class="button primary" type="submit"><Search size={18} aria-hidden="true" /> Buscar</button>
   </form>
 </dialog>}
 <script>
+  const sticky = document.querySelector<HTMLElement>('[data-sticky-header]');
+  const footer = document.querySelector<HTMLElement>('.page-footer');
+  if (sticky && footer) {
+    const measure = () => document.documentElement.style.setProperty('--sticky-header-height', `${sticky.offsetHeight}px`);
+    measure();
+    new ResizeObserver(measure).observe(sticky);
+    let footerInView = false;
+    const updateHeader = () => sticky.classList.toggle('footer-visible', footerInView && window.scrollY > 0);
+    const footerVisibility = new IntersectionObserver(([entry]) => {
+      footerInView = entry.isIntersecting;
+      updateHeader();
+    });
+    footerVisibility.observe(footer);
+    window.addEventListener('scroll', updateHeader, { passive: true });
+  }
+
   const menu = document.querySelector<HTMLButtonElement>('[data-menu-open]');
   const nav = document.querySelector<HTMLElement>('#mobile-nav');
   const closeMenu = () => {

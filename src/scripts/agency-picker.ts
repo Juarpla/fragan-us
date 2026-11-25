@@ -4,6 +4,7 @@ type Position = [number, number];
 type SelectEntry = [value: string, name: string];
 
 const alphabetic = new Intl.Collator('es-PE');
+const samePlace = new Intl.Collator('es-PE', { sensitivity: 'base' });
 const sortedEntries = (values: SelectEntry[]) => values.sort((a, b) => alphabetic.compare(a[1], b[1]));
 
 function optionSet(select: HTMLSelectElement, prompt: string, entries: SelectEntry[], keep = false) {
@@ -25,6 +26,14 @@ function centerOf([, , , , lat, lng]: District): Position | undefined {
   return lat === null || lng === null ? undefined : [lat, lng];
 }
 
+function streetAddress(address: string, area: string[]) {
+  const parts = address.split(/(,\s*|\s+[-–]\s+)/);
+  while (parts.length > 1 && area.some(place => samePlace.compare(place, parts.at(-1)!.trim()) === 0)) {
+    parts.splice(-2);
+  }
+  return parts.join('').trim();
+}
+
 export function setupAgencyPicker(form: HTMLFormElement, submit: HTMLButtonElement, paymentEnabled: boolean) {
   const picker = form.querySelector<HTMLElement>('[data-agency-picker]')!;
   const select = (name: string) => form.querySelector(`select[name=${name}]`) as unknown as HTMLSelectElement;
@@ -34,6 +43,10 @@ export function setupAgencyPicker(form: HTMLFormElement, submit: HTMLButtonEleme
   const agency = select('agency');
   const status = picker.querySelector<HTMLElement>('[data-agency-status]')!;
   const selection = picker.querySelector<HTMLElement>('[data-agency-selection]')!;
+  const region = selection.querySelector<HTMLElement>('[data-agency-region]')!;
+  const street = selection.querySelector<HTMLElement>('[data-agency-street]')!;
+  const reference = selection.querySelector<HTMLElement>('[data-agency-reference]')!;
+  const outside = selection.querySelector<HTMLElement>('[data-agency-outside]')!;
   const agencyField = picker.querySelector<HTMLElement>('[data-agency-field]')!;
   const retry = picker.querySelector<HTMLButtonElement>('[data-reload-agencies]')!;
   const locationPanel = picker.querySelector<HTMLElement>('[data-location-panel]')!;
@@ -50,8 +63,14 @@ export function setupAgencyPicker(form: HTMLFormElement, submit: HTMLButtonEleme
     selection.hidden = !chosen;
     if (!chosen) return;
     const area = districts.get(chosen.ubigeo)!;
-    const outside = chosen.ubigeo !== district.value ? ' · Fuera del distrito elegido' : '';
-    selection.textContent = `${chosen.address} · ${area.slice(1, 4).reverse().join(', ')}${outside}`;
+    const [address, ...details] = chosen.address.split(/(?:[,;–-]\s*|\s+)ref(?:erencia)?[.:]\s*/i);
+    const [, departmentName, provinceName, districtName] = area;
+    const places = [districtName, provinceName, departmentName];
+    region.textContent = places.join(', ');
+    street.textContent = streetAddress(address, places) || 'Dirección aún no disponible.';
+    reference.textContent = details.length ? `Referencia: ${details.join(' · ')}` : '';
+    reference.hidden = !details.length;
+    outside.hidden = chosen.ubigeo === district.value;
   }
 
   function showAgencies(keep = false) {
@@ -77,17 +96,24 @@ export function setupAgencyPicker(form: HTMLFormElement, submit: HTMLButtonEleme
         alphabetic.compare(a.branch.name, b.branch.name);
     });
     const options = local.length ? ranked : ranked.slice(0, 5);
+    if (keep && agency.value && !options.some(({ branch }) => String(branch.id) === agency.value)) {
+      const current = ranked.find(({ branch }) => String(branch.id) === agency.value);
+      if (current) options.push(current);
+    }
     optionSet(agency, 'Selecciona una agencia', options.map(({ branch, kilometers }) => {
       const area = districts.get(branch.ubigeo)!;
       const place = local.length ? '' : ` · ${area[3]}, ${area[2]}`;
       const nearby = closestFrom && kilometers !== undefined ? ` · ${kilometers.toLocaleString('es-PE', { maximumFractionDigits: 1 })} km` : '';
       return [String(branch.id), `${branch.name}${place}${nearby}`];
     }), keep);
-    const hint = local.length
-      ? (closestFrom ? 'Agencias de tu distrito ordenadas por distancia en línea recta.' : '')
-      : point ? 'Tu distrito no tiene una agencia disponible. Mostramos las más cercanas, fuera del distrito.'
-        : 'Tu distrito no tiene una agencia disponible. Mostramos alternativas fuera del distrito.';
-    status.textContent = [geolocationMessage, hint].filter(Boolean).join(' ');
+    const areaHint = local.length ? '' : 'Tu distrito no tiene una agencia disponible. Mostramos alternativas fuera del distrito.';
+    let sortHint = '';
+    if (closestFrom) {
+      sortHint = options.length === 1 ? 'Distancia desde tu ubicación en línea recta.' : 'Agencias ordenadas por distancia en línea recta.';
+    } else if (point && (geolocationMessage || !local.length)) {
+      sortHint = 'La cercanía se estima desde la zona que elegiste.';
+    }
+    status.textContent = [geolocationMessage, areaHint, sortHint].filter(Boolean).join(' ');
     showSelection();
   }
 
@@ -137,8 +163,9 @@ export function setupAgencyPicker(form: HTMLFormElement, submit: HTMLButtonEleme
   agency.addEventListener('change', showSelection);
   retry.addEventListener('click', () => void load());
   locate.addEventListener('click', () => {
-    if (!navigator.geolocation) {
-      geolocationMessage = 'Tu navegador no pudo compartir la ubicación. Puedes elegir una agencia de la lista.';
+    if (!window.isSecureContext || !navigator.geolocation) {
+      closestFrom = undefined;
+      geolocationMessage = 'La ubicación no está disponible en este navegador. Puedes elegir una agencia de la lista.';
       showAgencies(true);
       return;
     }
@@ -149,11 +176,16 @@ export function setupAgencyPicker(form: HTMLFormElement, submit: HTMLButtonEleme
       geolocationMessage = '';
       locate.disabled = false;
       showAgencies(true);
-    }, () => {
-      geolocationMessage = 'No pudimos acceder a tu ubicación. Puedes elegir una agencia de la lista.';
+    }, ({ code }) => {
+      closestFrom = undefined;
+      geolocationMessage = code === 1
+        ? 'El navegador bloqueó el acceso a tu ubicación. Puedes habilitarlo en los permisos del sitio.'
+        : code === 3
+          ? 'La ubicación tardó demasiado. Puedes volver a intentarlo.'
+          : 'El dispositivo no pudo determinar tu ubicación. Revisa si tienes activados los servicios de ubicación.';
       locate.disabled = false;
       showAgencies(true);
-    }, { timeout: 8000, maximumAge: 300000 });
+    }, { timeout: 12000, maximumAge: 300000 });
   });
   void load();
   return { reload: load };

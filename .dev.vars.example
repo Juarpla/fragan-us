@@ -4,3 +4,6 @@ ADMIN_PASSWORD=cambia-esta-clave-local
 # PAYMENT_PHONE=999999999
 # TELEGRAM_BOT_TOKEN=
 # TELEGRAM_CHAT_ID=
+
+# WhatsApp de soporte, con código de país y solo dígitos.
+SUPPORT_WHATSAPP=""

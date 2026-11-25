@@ -1,0 +1,60 @@
+---
+import { ArrowLeft, ArrowRight, MoonStar, Snowflake, Sun, Wind } from '@lucide/astro';
+import Base from '../../layouts/Base.astro';
+import ProductCard from '../../components/ProductCard.astro';
+import { catalogGroups, catalogHref, catalogParams, catalogSelection, filterCatalog, toggleCatalogFilter } from '../../lib/catalog-filters';
+import { getCatalog } from '../../lib/db';
+import { storeEnv } from '../../lib/runtime';
+
+const pageSize = 12;
+const { query, filters, page: requestedPage } = catalogSelection(Astro.url.searchParams);
+const products = await getCatalog(storeEnv);
+const matches = filterCatalog(products, filters, query);
+const pageCount = Math.max(1, Math.ceil(matches.length / pageSize));
+const page = Math.min(requestedPage, pageCount);
+if (page !== requestedPage) return Astro.redirect(catalogHref(filters, query, page), 302);
+const start = (page - 1) * pageSize;
+const filterIcons = { calido: Sun, fresco: Snowflake, diario: Wind, noche: MoonStar };
+---
+<Base title="Perfumes árabes">
+  <section class="container catalog-section catalog-page" id="catalogo" aria-labelledby="catalog-title">
+    <div class="catalog-intro">
+      <h1 id="catalog-title" class="inner-title">Perfumes árabes</h1>
+      <p>Combina clima, ocasión y preferencia para encontrar tu próxima fragancia.</p>
+    </div>
+    <div data-catalog-results>
+      <nav class="catalog-filters" aria-label="Filtrar perfumes">
+        {catalogGroups.map(({ label, id, options }) =>
+          <div class="catalog-filter-group" id={id} tabindex="-1" role="group" aria-label={label}>
+            <span class="catalog-filter-label">{label}</span>
+            <div class="filters">
+              {Object.entries(options).map(([value, label]) => {
+                const Icon = filterIcons[value as keyof typeof filterIcons];
+                const selected = filters.includes(value);
+                return <a href={catalogHref(toggleCatalogFilter(filters, value), query)} class:list={['filter', selected && 'selected']} data-catalog-control={value} aria-current={selected ? 'true' : undefined}>{Icon && <Icon size={16} aria-hidden="true" />}{label}</a>;
+              })}
+            </div>
+          </div>
+        )}
+      </nav>
+      <div class="query-status" tabindex="-1" data-results-heading>
+        <p>{query && <>Resultados para «{query}» <span>· </span></>}<span>{matches.length} {matches.length === 1 ? 'perfume' : 'perfumes'}</span></p>
+        {(query || filters.length > 0) && <a class="inline-link" data-catalog-control="clear" href={catalogHref()}>Limpiar filtros y búsqueda</a>}
+      </div>
+      {matches.length > 0 ? <div class="product-grid">{matches.slice(start, start + pageSize).map(product => <ProductCard heading="h2" product={product} catalogQuery={catalogParams(filters, query, page)} />)}</div> :
+        <div class="empty-card">
+          <h2>{products.length ? 'No encontramos perfumes' : 'Aún no hay perfumes en el catálogo'}</h2>
+          {products.length > 0 && <p>Prueba con otra combinación o elimina un filtro.</p>}
+        </div>}
+      {pageCount > 1 && <nav class="catalog-pagination" aria-label="Páginas del catálogo">
+        <a class="button secondary" href={page > 1 ? catalogHref(filters, query, page - 1) : undefined} aria-disabled={page === 1 ? 'true' : undefined} data-catalog-control="previous" data-catalog-page><ArrowLeft size={16} aria-hidden="true" /> Anterior</a>
+        <span>Página {page} de {pageCount}</span>
+        <a class="button secondary" href={page < pageCount ? catalogHref(filters, query, page + 1) : undefined} aria-disabled={page === pageCount ? 'true' : undefined} data-catalog-control="next" data-catalog-page>Siguiente <ArrowRight size={16} aria-hidden="true" /></a>
+      </nav>}
+    </div>
+    <p class="sr-only" data-catalog-status role="status"></p>
+  </section>
+</Base>
+<script>
+  import '../../scripts/catalog-ui';
+</script>

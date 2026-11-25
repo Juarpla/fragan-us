@@ -1,19 +1,20 @@
-import { catalogHref, catalogSelection } from '../lib/catalog-filters';
+import { catalogHref, catalogSelection, toggleCatalogFilter } from '../lib/catalog-filters';
 
 const section = document.querySelector<HTMLElement>('#catalogo')!;
 const results = section.querySelector<HTMLElement>('[data-catalog-results]')!;
-const status = section.querySelector<HTMLElement>('[data-catalog-status]')!;
-let currentSearch = location.search;
-let pending: AbortController | undefined;
+const announcement = section.querySelector<HTMLElement>('[data-catalog-status]')!;
+let renderedSearch = location.search;
+let pending: { controller: AbortController; url: URL } | undefined;
 
-async function update(url: URL, push: boolean, focused?: string) {
-  pending?.abort();
-  if (url.search === currentSearch) {
+async function update(url: URL, control?: HTMLAnchorElement) {
+  pending?.controller.abort();
+  if (url.search === renderedSearch) {
+    pending = undefined;
     results.removeAttribute('aria-busy');
     return;
   }
   const controller = new AbortController();
-  pending = controller;
+  pending = { controller, url };
   results.setAttribute('aria-busy', 'true');
   try {
     const response = await fetch(url.pathname + url.search, { signal: controller.signal });
@@ -21,35 +22,50 @@ async function update(url: URL, push: boolean, focused?: string) {
     const updated = page.querySelector('[data-catalog-results]');
     if (!response.ok || !updated) throw new Error('Catálogo no disponible.');
     if (controller.signal.aborted) return;
-    const keepFocus = focused && results.contains(document.activeElement);
+
+    const keepFocus = results.contains(document.activeElement);
     results.replaceChildren(...updated.childNodes);
-    currentSearch = url.search;
-    if (push) history.pushState(null, '', url);
-    const { filter, query } = catalogSelection(url.searchParams);
-    document.querySelectorAll<HTMLAnchorElement>('.hero-actions a, .main-nav a, #mobile-nav a').forEach(link => {
-      const anchor = link.hash.slice(1);
-      if (['catalogo', 'climas', 'ocasiones'].includes(anchor)) link.href = catalogHref(filter, query, anchor);
-    });
-    if (keepFocus) {
-      const next = [...results.querySelectorAll<HTMLAnchorElement>('[data-catalog-filter]')]
-        .find(link => link.dataset.catalogFilter === focused);
-      (next ?? results.querySelector<HTMLElement>('#climas'))?.focus({ preventScroll: true });
+    const canonical = new URL(response.url);
+    renderedSearch = canonical.search;
+    if (control) history.pushState(null, '', canonical);
+    else if (url.search !== renderedSearch) history.replaceState(history.state, '', canonical);
+
+    const heading = results.querySelector<HTMLElement>('[data-results-heading]')!;
+    if (control?.hasAttribute('data-catalog-page')) {
+      heading.focus({ preventScroll: true });
+      heading.scrollIntoView({ behavior: 'instant', block: 'start' });
+    } else if (keepFocus) {
+      const next = [...results.querySelectorAll<HTMLAnchorElement>('[data-catalog-control]')]
+        .find(link => link.dataset.catalogControl === control?.dataset.catalogControl);
+      (next ?? heading).focus({ preventScroll: true });
     }
-    status.textContent = results.querySelector('.query-status p')?.textContent ?? '';
+    const count = heading.querySelector('p')?.textContent ?? '';
+    const pagination = results.querySelector('.catalog-pagination span')?.textContent;
+    announcement.textContent = [count, pagination].filter(Boolean).join('. ');
   } catch {
     if (!controller.signal.aborted) {
-      if (push) location.assign(url);
+      if (control) location.assign(url);
       else location.reload();
     }
   } finally {
-    if (pending === controller) results.removeAttribute('aria-busy');
+    if (pending?.controller === controller) {
+      pending = undefined;
+      results.removeAttribute('aria-busy');
+    }
   }
 }
 
 section.addEventListener('click', event => {
-  const link = (event.target as Element).closest<HTMLAnchorElement>('[data-catalog-filter], [data-catalog-clear]');
+  const link = (event.target as Element).closest<HTMLAnchorElement>('a[data-catalog-control][href]');
   if (!link || event.defaultPrevented || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
   event.preventDefault();
-  void update(new URL(link.href), true, link.dataset.catalogFilter ?? 'clear');
+  const filter = link.dataset.catalogControl;
+  if (pending && filter && link.classList.contains('filter')) {
+    const { filters, query } = catalogSelection(pending.url.searchParams);
+    const href = catalogHref(toggleCatalogFilter(filters, filter), query);
+    void update(new URL(href, location.origin), link);
+  } else {
+    void update(new URL(link.href), link);
+  }
 });
-window.addEventListener('popstate', () => void update(new URL(location.href), false));
+window.addEventListener('popstate', () => void update(new URL(location.href)));

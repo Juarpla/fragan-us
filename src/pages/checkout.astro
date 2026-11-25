@@ -13,7 +13,7 @@ Astro.response.headers.set('Cache-Control', 'no-store');
     <h1 class="checkout-title">Finaliza tu compra</h1>
     {mode === 'demo' && <p class="notice">Modo de prueba. Usa datos ficticios. No realices un pago.</p>}
     {mode === 'unavailable' && <p class="notice">El pago en línea aún no está habilitado.</p>}
-    <div class="empty-card" data-checkout-empty hidden><h2>Tu bolsa está vacía</h2><p>Agrega un perfume para continuar.</p><a href="/#catalogo" class="button primary">Ver perfumes <ArrowRight size={17} aria-hidden="true" /></a></div>
+    <div class="empty-card" data-checkout-empty hidden><h2>Tu bolsa está vacía</h2><p>Agrega un perfume para continuar.</p><a href="/perfumes" class="button primary">Ver perfumes <ArrowRight size={17} aria-hidden="true" /></a></div>
     <div class="checkout-grid" data-checkout-content hidden>
       <aside class="panel checkout-aside" aria-labelledby="checkout-summary">
         <div class="checkout-summary-heading"><h2 id="checkout-summary">Tu bolsa</h2><button type="button" class="inline-link" data-cart-open>Editar bolsa</button></div>
@@ -35,13 +35,12 @@ Astro.response.headers.set('Cache-Control', 'no-store');
             <div class="checkout-preferences">
               <label class="checkout-consent">
                 <input type="checkbox" name="resume" />
-                <span>Por WhatsApp te mantendremos al tanto de tu pedido y, si marcas la casilla, te enviaremos ofertas y recordatorios de tu bolsa.</span>
+                <span>Acepto recibir mensajes y novedades por WhatsApp.</span>
               </label>
-              <a href="/privacidad">Ver política de privacidad</a>
+              <a href="/privacidad">Política de privacidad</a>
             </div>
             <div class="checkout-next">
-              <p id="request-terms">Paga por Yape o Plin y sube tu comprobante. Confirmaremos el pedido al verificar el pago.</p>
-              <button class="button primary" type="submit" data-confirm aria-describedby="request-terms" disabled>Continuar al pago <ArrowRight size={17} aria-hidden="true" /></button>
+              <button class="button primary" type="submit" data-confirm disabled>Continuar al pago <ArrowRight size={17} aria-hidden="true" /></button>
               <p class="error-message checkout-error" data-checkout-error role="alert"></p>
             </div>
           </div>

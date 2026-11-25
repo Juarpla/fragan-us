@@ -1,10 +1,10 @@
 ---
 import { Plus } from '@lucide/astro';
 import { money, type Product } from '../lib/catalog';
-const { product, catalogQuery = '' } = Astro.props as { product: Product; catalogQuery?: string };
+const { product, catalogQuery = '', highlight, heading: Heading = 'h3' } = Astro.props as { product: Product; catalogQuery?: string; highlight?: string; heading?: 'h2' | 'h3' };
 const { slug, name, brand, stock, price_cents, image_url, volume, concentration, family, tone, badge } = product;
 const detailsHref = `/perfumes/${slug}${catalogQuery}`;
-const tastingNote = product.notes.opening?.split(',')[0]?.trim();
+const tastingNote = highlight ?? product.notes.opening?.split(',')[0]?.trim();
 ---
 <article class="product-card">
   <div class:list={['product-visual', tone]}>
@@ -14,8 +14,8 @@ const tastingNote = product.notes.opening?.split(',')[0]?.trim();
     {badge && <span class="product-badge">{badge}</span>}
   </div>
   <div class="product-meta">
+    <Heading class="product-name"><a href={detailsHref}>{name}</a></Heading>
     <p class="product-brand">{brand}</p>
-    <h3><a href={detailsHref}>{name}</a></h3>
     <p class="product-description">{concentration} · {volume} ml <span aria-hidden="true"> / </span> {family}</p>
     {tastingNote && <p class="product-note">{tastingNote}</p>}
     <div class="product-bottom">

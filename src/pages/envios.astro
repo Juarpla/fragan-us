@@ -1,0 +1,27 @@
+---
+import { ArrowRight } from '@lucide/astro';
+import Base from '../layouts/Base.astro';
+---
+<Base title="Envíos a todo el Perú" description="Elige tu agencia de recojo en Perú. Conoce cómo se cobra el flete y cómo consultar el estado de tu pedido.">
+  <section class="container shipping-section" aria-labelledby="shipping-title">
+    <div class="shipping-hero">
+      <div class="shipping-copy">
+        <h1 class="inner-title" id="shipping-title">Envíos a todo <em>el Perú.</em></h1>
+        <p>Enviamos tus perfumes a la agencia de recojo que elijas. Por ahora usamos Shalom como transportista preferente.</p>
+        <a class="button primary" href="/perfumes">Explorar perfumes <ArrowRight size={18} aria-hidden="true" /></a>
+      </div>
+      <div class="shipping-map">
+        <img src="/brand/mapa-peru.svg" alt="Silueta del mapa del Perú" width="360" height="380" />
+      </div>
+    </div>
+
+    <div class="shipping-guide">
+      <h2>Cómo llega tu pedido</h2>
+      <ol class="shipping-steps" role="list">
+        <li><div><h3>Elige tu agencia de recojo</h3><p>Al finalizar tu compra, selecciona el departamento, la provincia y el distrito. Si tu distrito no tiene agencia, verás alternativas cercanas.</p></div></li>
+        <li><div><h3>Paga tus perfumes</h3><p>Paga por Yape o Plin y adjunta el comprobante. Cuando verifiquemos el pago, prepararemos tu pedido para el envío.</p></div></li>
+        <li><div><h3>Recoge el pedido y paga el flete</h3><p>Consulta el avance con el enlace de tu pedido. El transportista fija el precio del flete y te lo cobra por separado.</p></div></li>
+      </ol>
+    </div>
+  </section>
+</Base>

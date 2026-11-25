@@ -1,17 +1,24 @@
 ---
-import { ArrowRight, ChevronRight, ShoppingBag } from '@lucide/astro';
+import { ArrowRight, ChevronRight, ExternalLink, Heart, Layers, ShoppingBag, SprayCan } from '@lucide/astro';
 import Base from '../../layouts/Base.astro';
+import TikTok from '../../components/icons/TikTok.astro';
 import ProductCard from '../../components/ProductCard.astro';
 import { climateLabel, money, occasionLabel } from '../../lib/catalog';
 import { catalogHref, catalogParams, catalogSelection } from '../../lib/catalog-filters';
 import { getCatalog } from '../../lib/db';
 import { storeEnv } from '../../lib/runtime';
 
-const { filter, query } = catalogSelection(Astro.url.searchParams);
-const backToCatalog = catalogHref(filter, query);
+const { filters, query, page } = catalogSelection(Astro.url.searchParams);
+const backToCatalog = catalogHref(filters, query, page);
 const products = await getCatalog(storeEnv);
 const product = products.find(item => item.slug === Astro.params.slug);
 if (!product) Astro.response.status = 404;
+const reviewsHref = product && `https://www.tiktok.com/search?${new URLSearchParams({ q: `reseña ${product.brand} ${product.name}` })}`;
+const notes = product ? [
+  { label: 'Salida', Icon: SprayCan, notes: product.notes.opening, tone: 'sand' },
+  { label: 'Corazón', Icon: Heart, notes: product.notes.heart, tone: 'rose' },
+  { label: 'Fondo', Icon: Layers, notes: product.notes.base, tone: 'lilac' },
+] : [];
 const related = products.filter(item => item.slug !== product?.slug).slice(0, 4);
 ---
 <Base title={product ? `${product.name} de ${product.brand}` : 'Perfume no encontrado'} description={product?.description}>
@@ -20,25 +27,33 @@ const related = products.filter(item => item.slug !== product?.slug).slice(0, 4)
     <section class="detail-layout" aria-labelledby="product-title">
       <div class:list={['detail-visual', product.tone]}><img src={product.image_url} width="480" height="480" alt={`Frasco de ${product.name} de ${product.brand}`} /></div>
       <div class="detail-info">
-        <p class="eyebrow"><span></span> {product.brand.toUpperCase()} · {product.audience.toUpperCase()}</p>
         <h1 id="product-title">{product.name}</h1>
+        <p class="detail-identity">{product.brand} · {product.audience}</p>
         <p>{product.concentration} · {product.volume} ml / {product.family}</p>
         <strong class="detail-price">{money(product.price_cents)}</strong>
         <p>{product.description}</p>
         <p class="detail-stock">{product.stock > 0 ? `${product.stock} ${product.stock === 1 ? 'unidad disponible' : 'unidades disponibles'}` : 'Agotado'}</p>
-        <button class="button primary" type="button" data-add={JSON.stringify(product)} disabled={!product.stock}><ShoppingBag size={18} /> Agregar a la bolsa</button>
+        <div class="detail-actions">
+          <button class="button primary" type="button" data-add={JSON.stringify(product)} disabled={!product.stock}><ShoppingBag size={18} aria-hidden="true" /> Agregar a la bolsa</button>
+          <a class="button secondary" href={reviewsHref} target="_blank" rel="noopener noreferrer"><TikTok size={17} /> Ver reseñas en TikTok <ExternalLink size={14} aria-hidden="true" /></a>
+        </div>
         <div class="detail-tags">{[...product.climate, ...product.occasions].map(key => {
           const label = climateLabel[key] ?? occasionLabel[key];
-          return label && <a href={catalogHref(key, query)}>{label}</a>;
+          return label && <a href={catalogHref([key])}>{label}</a>;
         })}</div>
       </div>
     </section>
     <section class="note-section" aria-labelledby="notes-title">
       <h2 id="notes-title">Notas olfativas</h2>
       <dl class="note-grid">
-        <div><dt>Salida</dt><dd>{product.notes.opening}</dd></div><div><dt>Corazón</dt><dd>{product.notes.heart}</dd></div><div><dt>Fondo</dt><dd>{product.notes.base}</dd></div>
+        {notes.map(({ label, Icon, notes, tone }) => (
+          <div class:list={['note-tier', tone]}>
+            <dt><span class="note-icon"><Icon size={21} stroke-width={1.65} aria-hidden="true" /></span>{label}</dt>
+            <dd>{notes}</dd>
+          </div>
+        ))}
       </dl>
     </section>
   </div> : <section class="container inner-section"><h1 class="inner-title">Perfume no encontrado</h1><a class="button primary" href={backToCatalog}>Explorar perfumes <ArrowRight size={18} /></a></section>}
-  {product && related.length > 0 && <section class="container detail-section"><div class="section-heading"><h2>También te puede gustar</h2></div><div class="product-grid">{related.map(item => <ProductCard product={item} catalogQuery={catalogParams(filter, query)} />)}</div></section>}
+  {product && related.length > 0 && <section class="container detail-section"><div class="section-heading"><h2>También te puede gustar</h2></div><div class="product-grid">{related.map(item => <ProductCard product={item} catalogQuery={catalogParams(filters, query, page)} />)}</div></section>}
 </Base>

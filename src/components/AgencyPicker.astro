@@ -1,5 +1,5 @@
 ---
-import { LocateFixed } from '@lucide/astro';
+import { LocateFixed, MapPin } from '@lucide/astro';
 ---
 <section class="checkout-group agency-picker" data-agency-picker aria-labelledby="agency-heading">
   <div class="agency-heading">
@@ -19,6 +19,14 @@ import { LocateFixed } from '@lucide/astro';
   <button class="button secondary" type="button" data-reload-agencies hidden>Reintentar carga</button>
   <div class="agency-choice" data-agency-field hidden>
     <div class="field"><label for="agency-branch">Agencia</label><select id="agency-branch" name="agency" aria-describedby="agency-address" required disabled></select></div>
-    <p class="agency-selection" id="agency-address" data-agency-selection hidden></p>
+    <div class="agency-selection" id="agency-address" data-agency-selection hidden>
+      <MapPin size={20} aria-hidden="true" />
+      <div>
+        <p class="agency-region" data-agency-region></p>
+        <p class="agency-street" data-agency-street></p>
+        <p class="agency-reference" data-agency-reference hidden></p>
+        <p class="agency-outside" data-agency-outside hidden>Fuera del distrito elegido</p>
+      </div>
+    </div>
   </div>
 </section>

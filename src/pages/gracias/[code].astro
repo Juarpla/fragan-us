@@ -1,5 +1,6 @@
 ---
-import { ArrowRight, CircleCheck, RefreshCw } from '@lucide/astro';
+import { ArrowRight, CircleCheck, Copy, Link2, RefreshCw } from '@lucide/astro';
+import WhatsApp from '../../components/icons/WhatsApp.astro';
 import Base from '../../layouts/Base.astro';
 import { money } from '../../lib/catalog';
 import { checkoutMode, validCode } from '../../lib/http';
@@ -28,6 +29,10 @@ const message: Record<string, string> = {
 const mode = checkoutMode(storeEnv);
 const payable = order && isPayable(order, mode);
 const submitReceipt = order && canSubmitReceipt(order, mode);
+const supportPhone = storeEnv.SUPPORT_WHATSAPP;
+const supportHref = !supportPhone || !/^51[0-9]{9}$/.test(supportPhone) ? undefined
+  : `https://wa.me/${supportPhone}?${new URLSearchParams({ text: 'Hola, necesito ayuda con mi pedido de FraganUS.' })}`;
+
 ---
 <Base title="Estado del pedido" minimal privatePage>
   <section class="container inner-section">
@@ -37,17 +42,53 @@ const submitReceipt = order && canSubmitReceipt(order, mode);
       {order.is_demo === 1 && <p class="notice">Pedido de prueba.</p>}
       <p class="inner-copy">{message[order.status]}</p>
       <div class="panel">
-        <p class="muted">Código del pedido</p><code class="order-code">{order.order_code}</code>
+        <p class="muted">Código del pedido</p>
+        <code class="order-code">{order.order_code}</code>
         <p class="mt-3"><strong>{customerStatusLabel[order.status]}</strong></p>
         <p class="order-freight"><span>Total en productos</span><strong>{money(order.total_cents)}</strong></p>
         {order.status !== 'CANCELLED' && <p class="muted mt-2">El transportista fija y cobra el flete por separado.</p>}
-        <p class="muted mt-2">Guarda el enlace para consultar el estado.</p>
+        <div class="order-share" data-order-share>
+          <p class="muted">Guarda el enlace para consultar el estado de tu pedido.</p>
+          <div class="order-share-actions">
+            <button class="button secondary" type="button" data-share-code={order.order_code}><Copy size={16} aria-hidden="true" /> Copiar código</button>
+            <button class="button secondary" type="button" data-share-link={`/gracias/${order.order_code}`}><Link2 size={16} aria-hidden="true" /> Copiar enlace</button>
+          </div>
+          <p class="muted order-copy-status" data-order-copy-status role="status"></p>
+          <input data-order-copy-value aria-label="Texto para copiar" readonly hidden />
+        </div>
       </div>
       <div class="checkout-actions">
         {submitReceipt && <a class="button primary" href={`/pago/${order.order_code}`}>{payable ? 'Continuar al pago' : 'Enviar comprobante'} <ArrowRight size={17} aria-hidden="true" /></a>}
-        {!payable && <a class={`button ${submitReceipt ? 'secondary' : 'primary'}`} href="/#catalogo">Volver a la tienda <ArrowRight size={17} aria-hidden="true" /></a>}
+        {!payable && <a class={`button ${submitReceipt ? 'secondary' : 'primary'}`} href="/perfumes">Volver a la tienda <ArrowRight size={17} aria-hidden="true" /></a>}
         <a class="button secondary" href={`/gracias/${order.order_code}`}>Actualizar estado <RefreshCw size={16} aria-hidden="true" /></a>
+        {supportHref && <a class="button whatsapp-support" href={supportHref} target="_blank" rel="noopener noreferrer"><WhatsApp /> Soporte por WhatsApp</a>}
       </div>
     </div> : <div><h1 class="inner-title">Pedido no encontrado</h1><p class="inner-copy">Revisa el código del enlace de confirmación.</p><a class="button primary" href="/">Ir a la tienda <ArrowRight size={17} aria-hidden="true" /></a></div>}
   </section>
 </Base>
+
+<script>
+  const share = document.querySelector('[data-order-share]');
+  const status = share?.querySelector<HTMLElement>('[data-order-copy-status]');
+  const fallback = share?.querySelector<HTMLInputElement>('[data-order-copy-value]');
+
+  share?.querySelectorAll<HTMLButtonElement>('button').forEach(button => {
+    button.addEventListener('click', async () => {
+      if (!status || !fallback) return;
+      const code = button.dataset.shareCode;
+      const value = code ?? new URL(button.dataset.shareLink!, location.origin).href;
+      fallback.hidden = true;
+      status.textContent = '';
+      try {
+        await navigator.clipboard.writeText(value);
+        status.textContent = code ? 'Código copiado.' : 'Enlace copiado.';
+      } catch {
+        status.textContent = 'Selecciona y copia el texto.';
+        fallback.value = value;
+        fallback.hidden = false;
+        fallback.focus();
+        fallback.select();
+      }
+    });
+  });
+</script>

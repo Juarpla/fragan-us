@@ -27,7 +27,7 @@ const deadlineLabel = deadline?.toLocaleTimeString('es-PE', { timeZone: 'America
   <section class="container inner-section" data-payment-page>
     {order && canSubmitReceipt(order, mode) ? <>
       <h1 class="inner-title">{payable ? 'Paga tus perfumes' : 'Envía tu comprobante'}</h1>
-      <p class="inner-copy">Revisaremos tu comprobante antes de confirmar y preparar el pedido.</p>
+      <p class="inner-copy">Revisaremos tu pago antes de confirmar y preparar el pedido.</p>
       {order.is_demo === 1 && <p class="notice">Modo de prueba. Usa un comprobante ficticio.</p>}
       <div class="panel">
         <h2>Pago con Yape o Plin</h2>
@@ -35,7 +35,6 @@ const deadlineLabel = deadline?.toLocaleTimeString('es-PE', { timeZone: 'America
         {deadlineLabel && <p class="notice" data-payment-deadline={deadline?.toISOString()}>Para conservar tu stock, paga y sube el comprobante antes de las {deadlineLabel} (hora de Perú).</p>}
         <div class="payment-box">
           <p class="order-freight"><span>Importe de los perfumes</span><strong>{money(order.total_cents)}</strong></p>
-          <p>El flete lo fija y cobra el transportista por separado.</p>
           {payable && phone && <div class="payment-destination" data-payment-destination>
             {showQR && qrHref && <a class="payment-qr" href={qrHref} target="_blank" rel="noopener noreferrer" aria-label="Abrir el QR de pago en tamaño completo">
               <img src={qrHref} alt="Código QR de Yape para pagar a FraganUS" width="300" />
