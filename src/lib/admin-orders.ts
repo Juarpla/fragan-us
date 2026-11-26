@@ -1,4 +1,5 @@
 import { money } from './catalog';
+import { validCode } from './http';
 import { expireReservations, orderStages, type OrderRow } from './orders';
 
 const dateFormat = new Intl.DateTimeFormat('es-PE', { dateStyle: 'medium', timeStyle: 'short', timeZone: 'America/Lima' });
@@ -55,9 +56,12 @@ export async function loadAdminOrders(db: D1Database, request: Request, url: URL
     .reduce((expression, [letter, plain]) =>
       `replace(replace(${expression}, '${letter}', '${plain}'), '${letter.toUpperCase()}', '${plain}')`, 'customer_name');
   const documentQuery = normalized.replace(/[ -]/g, '');
+  const codeQuery = query.toUpperCase();
+  const isCode = validCode(codeQuery);
+  const isDocument = /^\d+$/.test(documentQuery);
   const condition = !query ? conditions[filter]
-    : /^\d+$/.test(documentQuery) ? 'document_number = ?' : `instr(lower(${foldedName}), ?) > 0`;
-  const terms = !query ? [] : [/^\d+$/.test(documentQuery) ? documentQuery : normalized];
+    : isCode ? 'order_code = ?' : isDocument ? 'document_number = ?' : `instr(lower(${foldedName}), ?) > 0`;
+  const terms = !query ? [] : [isCode ? codeQuery : isDocument ? documentQuery : normalized];
   const page = Math.max(1, Math.min(5000, Math.floor(Number(pageValue) || 1)));
   const limit = 25;
   await expireReservations(db);

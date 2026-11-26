@@ -1,0 +1,125 @@
+---
+import { ChevronDown, CreditCard, Sparkles, Truck } from '@lucide/astro';
+import WhatsAppSupport from './WhatsAppSupport.astro';
+
+const questions = [
+  {
+    icon: Sparkles,
+    title: '¿Cómo elijo un perfume?',
+    answer: 'Filtra por clima y ocasión. En la ficha de cada perfume puedes consultar sus notas y saber cuándo usarlo.',
+    link: { href: '/perfumes', label: 'Ver perfumes' },
+  },
+  {
+    icon: CreditCard,
+    title: '¿Cómo pago mi pedido?',
+    answer: 'Paga con Yape o Plin y adjunta tu comprobante. Cuando confirmemos el pago, empezaremos a preparar tu pedido.',
+  },
+  {
+    icon: Truck,
+    title: '¿Dónde recojo mi pedido?',
+    answer: 'Elige una agencia al finalizar la compra. Pagas el flete al transportista cuando recoges tu pedido.',
+    link: { href: '/envios', label: 'Ver cómo funcionan los envíos' },
+  },
+];
+---
+<section class="container home-support" aria-labelledby="home-support-title">
+  <h2 id="home-support-title">¿Cómo podemos ayudarte?</h2>
+  <div class="support-questions">
+    {questions.map(({ icon: Icon, title, answer, link }) => (
+      <details name="home-support">
+        <summary>
+          <Icon size={22} stroke-width={1.75} aria-hidden="true" />
+          <span>{title}</span>
+          <ChevronDown class="support-chevron" size={17} aria-hidden="true" />
+        </summary>
+        <div class="support-answer">
+          <p>{answer}</p>
+          {link && <a href={link.href}>{link.label}</a>}
+        </div>
+      </details>
+    ))}
+  </div>
+  <WhatsAppSupport label="Contáctanos" />
+</section>
+
+<style>
+  .home-support {
+    display: grid;
+    gap: 18px;
+    padding-block: 26px 36px;
+    border-top: 1px solid var(--line);
+  }
+  h2 { font: 500 clamp(27px, 2.7vw, 38px)/1.17 var(--serif); letter-spacing: -.035em; }
+  .support-questions {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    border: 1px solid #e4d8eb;
+    border-radius: 14px;
+    background: #f7f1fa;
+  }
+  details { min-width: 0; }
+  details + details { border-inline-start: 1px solid #e4d8eb; }
+  summary {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 12px;
+    min-height: 68px;
+    padding: 12px clamp(14px, 1.6vw, 24px);
+    border-radius: 12px;
+    color: var(--purple-deep);
+    font-weight: 750;
+    line-height: 1.3;
+    list-style: none;
+    cursor: pointer;
+    transition: background-color .2s ease;
+  }
+  summary::-webkit-details-marker { display: none; }
+  summary:focus-visible { outline-offset: -4px; }
+  summary:hover, details[open] > summary { background: #ede1f6; }
+  .support-chevron { transition: transform .24s ease-out; }
+  details[open] .support-chevron { transform: rotate(180deg); }
+  .support-answer {
+    padding: 14px clamp(14px, 1.6vw, 24px) 18px;
+    color: var(--muted);
+    font-size: .9375rem;
+  }
+  .support-answer a {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+    margin-bottom: -8px;
+    color: var(--purple-deep);
+    font-weight: 700;
+    text-decoration: underline;
+    text-underline-offset: .18em;
+  }
+  .home-support > :global(.whatsapp-support) { justify-self: end; }
+
+  @media (max-width: 680px) {
+    .support-questions { grid-template-columns: minmax(0, 1fr); }
+    details + details { border-inline-start: 0; border-block-start: 1px solid #e4d8eb; }
+    summary { min-height: 54px; }
+    .home-support > :global(.whatsapp-support) { justify-self: stretch; }
+  }
+  @media (prefers-reduced-motion: no-preference) {
+    @supports (interpolate-size: allow-keywords) {
+      details::details-content {
+        block-size: 0;
+        overflow: clip;
+        interpolate-size: allow-keywords;
+        transition: block-size .28s cubic-bezier(.2,.75,.25,1), content-visibility .28s allow-discrete;
+      }
+      details[open]::details-content { block-size: auto; }
+    }
+    @supports not (interpolate-size: allow-keywords) {
+      details[open] .support-answer { animation: reveal-answer .24s ease-out; }
+    }
+  }
+  @keyframes reveal-answer {
+    from { opacity: 0; transform: translateY(-5px); }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    summary, .support-chevron { transition: none; }
+  }
+</style>

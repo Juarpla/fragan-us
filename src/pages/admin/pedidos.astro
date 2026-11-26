@@ -38,7 +38,7 @@ const stageIcons = [FileCheck, PackageCheck, Truck];
         <form id="order-search" class="admin-order-search" method="post" action={`/admin/pedidos?estado=${filter}`}>
           <label class="field" for="customer-search">Buscar pedidos</label>
           <div>
-            <input id="customer-search" name="q" type="search" value={query} maxlength="90" autocomplete="off" placeholder="Nombre, DNI o carné" required />
+            <input id="customer-search" name="q" type="search" value={query} maxlength="90" autocomplete="off" placeholder="Código, nombre, DNI o carné" required />
             <button class="button secondary" type="submit"><Search size={17} aria-hidden="true" /> Buscar</button>
             <button type="button" class="button secondary admin-refresh" aria-label="Actualizar pedidos" title="Actualizar pedidos" data-order-refresh hidden>
               <RefreshCw size={18} aria-hidden="true" />
