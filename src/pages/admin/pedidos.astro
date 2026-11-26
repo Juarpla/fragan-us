@@ -34,14 +34,16 @@ const stageIcons = [FileCheck, PackageCheck, Truck];
     </nav>
     <section class="panel admin-section" aria-labelledby="order-list" data-admin-orders>
       <div class="admin-orders-heading">
-        <div class="admin-orders-context">
-          <div><h2 id="order-list" tabindex="-1">Pedidos</h2><p class="muted">{query ? 'Resultados en todas las etapas' : label}</p></div>
-          <button type="button" class="button secondary admin-refresh" data-order-refresh hidden><RefreshCw size={16} aria-hidden="true" /> Actualizar pedidos</button>
-        </div>
+        <div><h2 id="order-list" tabindex="-1">Pedidos</h2><p class="muted">{query ? 'Resultados en todas las etapas' : label}</p></div>
         <form id="order-search" class="admin-order-search" method="post" action={`/admin/pedidos?estado=${filter}`}>
           <label class="field" for="customer-search">Buscar pedidos</label>
-          <div><input id="customer-search" name="q" type="search" value={query} maxlength="90" autocomplete="off" placeholder="Nombre, DNI o carné" required />
-          <button class="button secondary" type="submit"><Search size={17} aria-hidden="true" /> Buscar</button></div>
+          <div>
+            <input id="customer-search" name="q" type="search" value={query} maxlength="90" autocomplete="off" placeholder="Nombre, DNI o carné" required />
+            <button class="button secondary" type="submit"><Search size={17} aria-hidden="true" /> Buscar</button>
+            <button type="button" class="button secondary admin-refresh" aria-label="Actualizar pedidos" title="Actualizar pedidos" data-order-refresh hidden>
+              <RefreshCw size={18} aria-hidden="true" />
+            </button>
+          </div>
           {query && <a class="inline-link" href={`/admin/pedidos?estado=${filter}`}>Limpiar búsqueda</a>}
         </form>
       </div>
