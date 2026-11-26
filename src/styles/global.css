@@ -552,6 +552,14 @@ input[type=checkbox], input[type=radio] { accent-color: var(--purple); }
 .fragrance-switch-close, .has-inspiration[data-inspiration=reference] .fragrance-switch-open { visibility: hidden; }
 .has-inspiration[data-inspiration=reference] .fragrance-switch-close { visibility: visible; }
 @media (hover: hover) and (pointer: fine) {
+  .fragrance-switch {
+    opacity: 0; pointer-events: none; transition: opacity .16s ease-out;
+  }
+  .product-card:hover .fragrance-switch,
+  .detail-visual:hover .fragrance-switch,
+  .fragrance-switch:focus-visible {
+    opacity: 1; pointer-events: auto; transition-duration: .24s;
+  }
   .has-inspiration.product-visual:hover .product-image-link img { transform: scale(1.05); }
 }
 @media (max-width: 760px) {
@@ -569,7 +577,7 @@ input[type=checkbox], input[type=radio] { accent-color: var(--purple); }
   .fragrance-reference { padding-inline: 7px; }
 }
 @media (prefers-reduced-motion: reduce) {
-  .has-inspiration .fragrance-front, .fragrance-reference { transition: none; }
+  .has-inspiration .fragrance-front, .fragrance-reference, .fragrance-switch { transition: none; }
   .detail-visual:hover .fragrance-front > img, .has-inspiration.product-visual:hover .product-image-link img { transform: none; }
 }
 
