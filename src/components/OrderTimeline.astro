@@ -29,26 +29,13 @@ const time = new Intl.DateTimeFormat('es-PE', { hour: 'numeric', minute: '2-digi
 </ol>
 <script>
   document.querySelectorAll<HTMLElement>('[data-timeline]').forEach(timeline => {
-    if (matchMedia('(prefers-reduced-motion: reduce)').matches) return;
-    let started = false;
+    let inView = false;
+    const sync = () => timeline.toggleAttribute('data-wave-running', inView && !document.hidden);
     const observer = new IntersectionObserver(([entry]) => {
-      if (!started && entry.isIntersecting && !document.hidden) {
-        started = true;
-        timeline.setAttribute('data-wave-running', '');
-        document.addEventListener('visibilitychange', stop, { once: true });
-      } else if (started && !entry.isIntersecting) {
-        stop();
-      }
+      inView = entry.isIntersecting;
+      sync();
     });
-    function stop() {
-      timeline.removeAttribute('data-wave-running');
-      observer.disconnect();
-      document.removeEventListener('visibilitychange', stop);
-      timeline.removeEventListener('animationend', stop);
-      timeline.removeEventListener('animationcancel', stop);
-    }
-    timeline.addEventListener('animationend', stop);
-    timeline.addEventListener('animationcancel', stop);
+    document.addEventListener('visibilitychange', sync);
     observer.observe(timeline);
   });
 </script>

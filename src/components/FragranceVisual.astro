@@ -1,5 +1,4 @@
 ---
-import { RotateCw } from '@lucide/astro';
 import type { Product } from '../lib/catalog';
 
 interface Props {
@@ -27,7 +26,6 @@ const photoAlt = `Frasco de ${name} de ${brand}`;
         <span class="fragrance-switch-open">Ver inspiración<span class="sr-only"> de {name}</span></span>
         <span class="fragrance-switch-close">Ver perfume<span class="sr-only"> {name}</span></span>
       </span>
-      <RotateCw size={15} aria-hidden="true" />
     </button>
   </>}
 </div>
