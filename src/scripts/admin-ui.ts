@@ -16,22 +16,50 @@ export async function save(control: HTMLButtonElement, message: HTMLElement, url
 
 const inventoryReturn = document.querySelector<HTMLElement>('[data-inventory-return]')?.dataset.inventoryReturn ?? '/admin/catalogo#stock';
 
+function returnToInventory(message: string) {
+  sessionStorage.setItem('fraganus:admin-feedback', message);
+  const destination = new URL(inventoryReturn, location.href);
+  if (location.pathname === destination.pathname && location.search === destination.search) {
+    history.replaceState(history.state, '', destination);
+    location.reload();
+  } else {
+    location.assign(destination);
+  }
+}
+
 document.querySelectorAll<HTMLFormElement>('[data-product-form], [data-stock]').forEach(form => {
   form.addEventListener('submit', async event => {
     event.preventDefault();
     const data = new FormData(form);
     const button = form.querySelector<HTMLButtonElement>('button[type=submit]')!;
     const message = form.querySelector<HTMLElement>('[role=alert]')!;
-    const { stock: slug, previousStock, previousActive, previousPrice } = form.dataset;
+    const { stock: slug, previousStock, previousActive, previousPrice, version } = form.dataset;
     const init = slug ? {
       method: 'PATCH', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ slug, stock: Number(data.get('stock')), active: data.has('active'),
         priceCents: Math.round(Number(data.get('price')) * 100), previousPriceCents: Number(previousPrice),
-        previousStock: Number(previousStock), previousActive: previousActive === '1' }),
+        previousStock: Number(previousStock), previousActive: previousActive === '1', version: Number(version) }),
     } : { method: form.dataset.edit ? 'PUT' : 'POST', body: data };
     if (await save(button, message, '/api/admin/products', init)) {
-      sessionStorage.setItem('fraganus:admin-feedback', slug ? 'Inventario actualizado.' : 'Perfume guardado.');
-      location.assign(inventoryReturn);
+      returnToInventory(slug ? 'Inventario actualizado.' : 'Perfume guardado.');
+    }
+  });
+});
+
+document.querySelectorAll<HTMLFormElement>('[data-delete-product]').forEach(form => {
+  form.addEventListener('submit', async event => {
+    event.preventDefault();
+    const button = form.querySelector<HTMLButtonElement>('button')!;
+    const message = form.querySelector<HTMLElement>('[role=alert]')!;
+    const { deleteProduct: slug, version, name } = form.dataset;
+    if (button.disabled || !window.confirm(`¿Eliminar «${name}»? Se retirará del inventario y de la tienda. Los pedidos anteriores seguirán disponibles.`)) return;
+    if (await save(button, message, '/api/admin/products', {
+      method: 'DELETE', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ slug, version: Number(version) }),
+    })) {
+      returnToInventory('Perfume eliminado.');
+    } else {
+      button.focus();
     }
   });
 });
@@ -46,8 +74,7 @@ document.querySelectorAll<HTMLFormElement>('[data-inspiration-form]').forEach(fo
       method: 'POST', body: new FormData(form),
     });
     if (!saved) return;
-    sessionStorage.setItem('fraganus:admin-feedback', 'Inspiración guardada.');
-    location.assign(inventoryReturn);
+    returnToInventory('Inspiración guardada.');
   });
 });
 

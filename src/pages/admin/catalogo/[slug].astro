@@ -1,5 +1,6 @@
 ---
 import { ArrowLeft, Box, Plus } from '@lucide/astro';
+import AdminProductDelete from '../../../components/AdminProductDelete.astro';
 import AdminProductForm from '../../../components/AdminProductForm.astro';
 import AdminLayout from '../../../layouts/AdminLayout.astro';
 import type { Product } from '../../../lib/catalog';
@@ -15,7 +16,7 @@ Astro.response.headers.set('Referrer-Policy', 'no-referrer');
 const db = storeEnv.DB;
 if (!db) return new Response('Base de datos no disponible.', { status: 503 });
 await expireReservations(db);
-const record = await db.prepare('SELECT * FROM products WHERE slug = ?').bind(Astro.params.slug ?? '')
+const record = await db.prepare('SELECT * FROM products WHERE slug = ? AND deleted_at IS NULL').bind(Astro.params.slug ?? '')
   .first<Omit<Product, 'climate' | 'occasions' | 'notes'> & { climate: string; occasions: string; notes: string; active: number; edit_version: number }>();
 const product = record && {
   ...record, climate: JSON.parse(record.climate), occasions: JSON.parse(record.occasions), notes: JSON.parse(record.notes),
@@ -33,7 +34,7 @@ const returnToInventory = `${inventoryPage}#stock`;
     <section class="panel admin-section" aria-labelledby="product-editor-title" data-inventory-return={returnToInventory}>
       <a class="inline-link admin-back-link" href={returnToInventory}><ArrowLeft size={16} aria-hidden="true" /> Volver al catálogo</a>
       <h2 id="product-editor-title">{product ? `Editar ${product.name}` : 'No se encontró el perfume'}</h2>
-      {product && <AdminProductForm product={product} />}
+      {product && <><AdminProductForm product={product} /><AdminProductDelete product={product} /></>}
     </section>
   </div>
 </AdminLayout>

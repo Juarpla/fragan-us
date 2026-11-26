@@ -1,0 +1,21 @@
+---
+import { Trash } from '@lucide/astro';
+
+interface Props {
+  product: { slug: string; name: string; brand: string; edit_version: number };
+}
+const { product } = Astro.props;
+---
+<form class="product-delete" data-delete-product={product.slug} data-version={product.edit_version} data-name={`${product.name} · ${product.brand}`}>
+  <button class="button product-delete-button" type="submit" aria-label={`Eliminar perfume ${product.name}`}>
+    <Trash size={16} aria-hidden="true" /> Eliminar perfume
+  </button>
+  <p class="error-message" role="alert"></p>
+</form>
+
+<style>
+  .product-delete { min-width: 0; }
+  .product-delete-button { padding-inline: 10px; border-color: transparent; color: #a42c46; }
+  .product-delete-button:hover:not(:disabled) { background: #fff0f3; color: #8b2038; }
+  .error-message:empty { display: none; }
+</style>

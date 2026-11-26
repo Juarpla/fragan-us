@@ -14,7 +14,7 @@ export async function getCatalog(env?: StoreEnv): Promise<Product[]> {
     try {
       await expireReservations(env.DB);
       const { results } = await env.DB.prepare('SELECT * FROM products WHERE active = 1 ORDER BY position, name').all<ProductRow>();
-      if (results.length > 0 || !showSamples) {
+      if (results.length > 0 || !showSamples || await env.DB.prepare('SELECT 1 FROM products LIMIT 1').first()) {
         return results.map(row => ({ ...row, collections: JSON.parse(row.collections), climate: JSON.parse(row.climate), occasions: JSON.parse(row.occasions), notes: JSON.parse(row.notes) }));
       }
     } catch (error) {

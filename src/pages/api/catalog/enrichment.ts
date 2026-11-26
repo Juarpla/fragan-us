@@ -31,7 +31,7 @@ export const GET: APIRoute = async ({ request, url }) => {
   if (!db) return json({ error: 'Catálogo no disponible.' }, 503);
   const after = url.searchParams.get('after') ?? '';
   if (!/^[a-z0-9-]{0,80}$/.test(after)) return json({ error: 'Cursor no válido.' }, 400);
-  const { results } = await db.prepare(`SELECT ${columns} FROM products WHERE slug > ? AND (
+  const { results } = await db.prepare(`SELECT ${columns} FROM products WHERE deleted_at IS NULL AND slug > ? AND (
     volume < 1 OR concentration = '' OR audience = '' OR family = '' OR tone = '' OR description = '' OR image_url IN ('', ?) OR
     json_array_length(climate) = 0 OR json_array_length(occasions) = 0 OR
     COALESCE(json_extract(notes, '$.opening'), '') = '' OR COALESCE(json_extract(notes, '$.heart'), '') = '' OR
@@ -52,9 +52,10 @@ export const POST: APIRoute = async ({ request }) => {
   const version = form?.get('version');
   if (!form || typeof slug !== 'string' || !/^[a-z0-9-]{1,80}$/.test(slug) ||
     typeof version !== 'string' || !/^\d{1,12}$/.test(version)) return json({ error: 'Ficha no válida.' }, 400);
-  const load = () => db.prepare(`SELECT ${columns} FROM products WHERE slug = ?`).bind(slug).first<Candidate>();
+  const load = () => db.prepare(`SELECT ${columns}, deleted_at FROM products WHERE slug = ?`)
+    .bind(slug).first<Candidate & { deleted_at: string | null }>();
   const current = await load();
-  if (!current || current.edit_version !== Number(version)) return json({ error: 'Ficha modificada.' }, 409);
+  if (!current || current.deleted_at || current.edit_version !== Number(version)) return json({ error: 'Ficha modificada.' }, 409);
 
   // Reuse the form validation, but read required values from the actual record.
   form.set('name', current.name);
@@ -92,7 +93,7 @@ export const POST: APIRoute = async ({ request }) => {
   if (!changed.length) return json({ changed });
   try {
     const result = await db.prepare(`UPDATE products SET ${changed.map(field => `${field} = ?`).join(', ')},
-      edit_version = edit_version + 1 WHERE slug = ? AND edit_version = ?`)
+      edit_version = edit_version + 1 WHERE slug = ? AND deleted_at IS NULL AND edit_version = ?`)
       .bind(...Object.values(fields), slug, current.edit_version).run();
     if (result.meta.changes) return json({ changed });
   } catch {

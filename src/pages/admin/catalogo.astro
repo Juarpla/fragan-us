@@ -4,6 +4,7 @@ import { guardAdmin } from '../../lib/http';
 import { storeEnv } from '../../lib/runtime';
 import { ArrowUpRight, Box, Plus, Search, Sparkles } from '@lucide/astro';
 import AdminProductForm from '../../components/AdminProductForm.astro';
+import AdminProductDelete from '../../components/AdminProductDelete.astro';
 import { productPhotoPlaceholder, type Product } from '../../lib/catalog';
 import { searchableText } from '../../lib/catalog-filters';
 import { expireReservations } from '../../lib/orders';
@@ -14,9 +15,10 @@ Astro.response.headers.set('Referrer-Policy', 'no-referrer');
 
 const db = storeEnv.DB;
 if (!db) return new Response('Base de datos no disponible.', { status: 503 });
-type StockRow = Pick<Product, 'slug' | 'name' | 'brand' | 'stock' | 'price_cents' | 'inspiration_name' | 'inspiration_image_url' | 'image_url' | 'tone'> & { active: number };
+type StockRow = Pick<Product, 'slug' | 'name' | 'brand' | 'stock' | 'price_cents' | 'inspiration_name' | 'inspiration_image_url' | 'image_url' | 'tone'> & { active: number; edit_version: number };
 await expireReservations(db);
-const { results: inventory } = await db.prepare('SELECT slug, name, brand, stock, active, price_cents, inspiration_name, inspiration_image_url, image_url, tone FROM products ORDER BY active DESC, position, name').all<StockRow>();
+const { results: inventory } = await db.prepare(`SELECT slug, name, brand, stock, active, price_cents, inspiration_name, inspiration_image_url, image_url, tone, edit_version
+  FROM products WHERE deleted_at IS NULL ORDER BY active DESC, position, name`).all<StockRow>();
 
 const params = Astro.url.searchParams;
 const query = (params.get('q') ?? '').trim().slice(0, 80);
@@ -86,31 +88,35 @@ const inventorySearch = applied.size ? `?${applied}` : '';
             <img src={product.image_url} alt="" width="52" height="56" class={product.tone} loading="lazy" />
             <div><strong>{product.name}</strong><p>{product.brand} · {product.stock ? 'Disponible' : 'Agotado'}{!product.active && ' · Oculto'}{product.image_url === productPhotoPlaceholder && ' · Foto pendiente'}</p><a class="inline-link" href={`/admin/catalogo/${product.slug}${inventorySearch}`}>Editar perfume <ArrowUpRight size={13} aria-hidden="true" /></a></div>
           </div>
-          <form class="admin-stock-form" data-stock={product.slug} data-previous-stock={product.stock} data-previous-active={product.active} data-previous-price={product.price_cents}>
+          <form class="admin-stock-form" data-stock={product.slug} data-previous-stock={product.stock} data-previous-active={product.active} data-previous-price={product.price_cents} data-version={product.edit_version}>
             <label class="field">Precio (S/)<input name="price" type="number" inputmode="decimal" min=".01" max="160" step=".01" value={(product.price_cents / 100).toFixed(2)} required /></label>
             <label class="field">Unidades disponibles<input name="stock" type="number" min="0" max="10000" step="1" value={product.stock} required /></label>
             <label class="stock-visible"><input name="active" type="checkbox" checked={Boolean(product.active)} /> Mostrar en catálogo</label>
             <button class="button secondary" type="submit">Guardar cambios</button>
             <p class="error-message" role="alert"></p>
           </form>
-          <details class="admin-editor admin-inspiration">
-            <summary><Sparkles size={17} aria-hidden="true" /> {product.inspiration_name ? `Inspiración: ${product.inspiration_name}` : 'Agregar inspiración'}</summary>
-            <form class="admin-editor-form" data-inspiration-form action="/api/admin/inspiration" method="post" enctype="multipart/form-data">
-              <input type="hidden" name="slug" value={product.slug} />
-              <input type="hidden" name="previousName" value={product.inspiration_name ?? ''} />
-              <input type="hidden" name="previousImage" value={product.inspiration_image_url ?? ''} />
-              <label class="field">Fragancia de referencia
-                <input name="name" value={product.inspiration_name ?? ''} placeholder="Ej. Sauvage Elixir de Dior" maxlength="100" />
-              </label>
-              <label class="field">Foto de referencia (opcional)
-                <input name="photo" type="file" accept="image/jpeg,image/png,image/webp" />
-              </label>
-              {product.inspiration_image_url && <label class="stock-visible"><input type="checkbox" name="removePhoto" /> Quitar la foto actual</label>}
-              <p class="muted">Deja el nombre en blanco para quitar la inspiración.</p>
-              <button class="button primary" type="submit">Guardar inspiración</button>
-              <p class="error-message" role="alert"></p>
-            </form>
-          </details>
+          <div class="inventory-item-actions">
+            <details class="admin-editor admin-inspiration">
+              <summary><Sparkles size={17} aria-hidden="true" /> {product.inspiration_name ? `Inspiración: ${product.inspiration_name}` : 'Agregar inspiración'}</summary>
+              <form class="admin-editor-form" data-inspiration-form action="/api/admin/inspiration" method="post" enctype="multipart/form-data">
+                <input type="hidden" name="slug" value={product.slug} />
+                <input type="hidden" name="version" value={product.edit_version} />
+                <input type="hidden" name="previousName" value={product.inspiration_name ?? ''} />
+                <input type="hidden" name="previousImage" value={product.inspiration_image_url ?? ''} />
+                <label class="field">Fragancia de referencia
+                  <input name="name" value={product.inspiration_name ?? ''} placeholder="Ej. Sauvage Elixir de Dior" maxlength="100" />
+                </label>
+                <label class="field">Foto de referencia (opcional)
+                  <input name="photo" type="file" accept="image/jpeg,image/png,image/webp" />
+                </label>
+                {product.inspiration_image_url && <label class="stock-visible"><input type="checkbox" name="removePhoto" /> Quitar la foto actual</label>}
+                <p class="muted">Deja el nombre en blanco para quitar la inspiración.</p>
+                <button class="button primary" type="submit">Guardar inspiración</button>
+                <p class="error-message" role="alert"></p>
+              </form>
+            </details>
+            <AdminProductDelete product={product} />
+          </div>
         </article>
       ))}</div> : <p class="admin-empty">{inventory.length ? 'No encontramos perfumes con estos filtros.' : 'Agrega tu primer perfume con su nombre, marca y precio.'}</p>}
     </section>
@@ -144,6 +150,9 @@ const inventorySearch = applied.size ? `?${applied}` : '';
     font-size: .875rem;
   }
   .inventory-results a { min-height: 44px; }
+  .inventory-item-actions { display: flex; flex: 1 0 100%; flex-wrap: wrap; align-items: start; justify-content: space-between; gap: 6px 14px; }
+  .inventory-item-actions .admin-editor { flex: 0 1 auto; }
+  .inventory-item-actions .admin-editor[open] { flex-basis: 100%; }
   @media (max-width: 1120px) {
     .inventory-toolbar { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     .inventory-search { grid-column: 1 / -1; }
