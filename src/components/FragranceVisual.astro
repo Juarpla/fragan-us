@@ -22,8 +22,12 @@ const photoAlt = `Frasco de ${name} de ${brand}`;
       {inspiration_image_url && <img src={inspiration_image_url} alt="" width="360" height="360" loading="lazy" />}
       <div><p>Referencia olfativa</p><strong>{inspiration_name}</strong></div>
     </div>
-    <button type="button" class="fragrance-switch" data-inspiration-toggle aria-pressed="false" aria-label={`Ver inspiración de ${name}`}>
-      <span class="sr-only">Cambiar cara</span><RotateCw size={17} aria-hidden="true" />
+    <button type="button" class="fragrance-switch" data-inspiration-toggle>
+      <span class="fragrance-switch-label">
+        <span class="fragrance-switch-open">Ver inspiración<span class="sr-only"> de {name}</span></span>
+        <span class="fragrance-switch-close">Ver perfume<span class="sr-only"> {name}</span></span>
+      </span>
+      <RotateCw size={15} aria-hidden="true" />
     </button>
   </>}
 </div>

@@ -1,5 +1,5 @@
 ---
-import { Check, ClipboardCheck, CreditCard, Package, Pause, Play, Truck } from '@lucide/astro';
+import { Check, ClipboardCheck, CreditCard, Package, Truck } from '@lucide/astro';
 import type { OrderRow } from '../lib/orders';
 
 type Props = { order: Pick<OrderRow, 'status' | 'created_at' | 'receipt_submitted_at' | 'preparation_started_at' | 'shipped_at'> };
@@ -14,8 +14,7 @@ const steps = [
 const date = new Intl.DateTimeFormat('es-PE', { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'America/Lima' });
 const time = new Intl.DateTimeFormat('es-PE', { hour: 'numeric', minute: '2-digit', timeZone: 'America/Lima' });
 ---
-<div class="timeline-shell" data-timeline>
-<ol class="order-timeline" role="list" aria-label="Progreso de tu pedido">
+<ol class="order-timeline" role="list" aria-label="Progreso de tu pedido" data-timeline={active > 0 ? '' : undefined}>
   {steps.map(({ label, Icon, timestamp }, index) => {
     const recorded = timestamp && new Date(timestamp.replace(' ', 'T') + 'Z');
     return <li class:list={[index < active && 'is-complete', index === active && 'is-current']}
@@ -28,27 +27,28 @@ const time = new Intl.DateTimeFormat('es-PE', { hour: 'numeric', minute: '2-digi
     </li>;
   })}
 </ol>
-{active > 0 && <button class="timeline-control" type="button" aria-label="Pausar animación del seguimiento" aria-pressed="false" data-timeline-control hidden><Pause size={15} data-motion-pause aria-hidden="true" /><Play size={15} data-motion-play aria-hidden="true" /></button>}
-</div>
 <script>
-  const reduced = matchMedia('(prefers-reduced-motion: reduce)');
   document.querySelectorAll<HTMLElement>('[data-timeline]').forEach(timeline => {
-    const control = timeline.querySelector<HTMLButtonElement>('[data-timeline-control]');
-    if (!control) return;
-    const showControl = () => control.hidden = reduced.matches;
-    showControl();
-    reduced.addEventListener('change', showControl);
-    control.addEventListener('click', () => {
-      const paused = timeline.toggleAttribute('data-timeline-paused');
-      control.setAttribute('aria-pressed', String(paused));
+    if (matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    let started = false;
+    const observer = new IntersectionObserver(([entry]) => {
+      if (!started && entry.isIntersecting && !document.hidden) {
+        started = true;
+        timeline.setAttribute('data-wave-running', '');
+        document.addEventListener('visibilitychange', stop, { once: true });
+      } else if (started && !entry.isIntersecting) {
+        stop();
+      }
     });
-    let inView = true;
-    const updateVisibility = () => timeline.toggleAttribute('data-timeline-outside', !inView || document.hidden);
-    document.addEventListener('visibilitychange', updateVisibility);
-    new IntersectionObserver(([entry]) => {
-      inView = entry.isIntersecting;
-      updateVisibility();
-    }).observe(timeline);
-    updateVisibility();
+    function stop() {
+      timeline.removeAttribute('data-wave-running');
+      observer.disconnect();
+      document.removeEventListener('visibilitychange', stop);
+      timeline.removeEventListener('animationend', stop);
+      timeline.removeEventListener('animationcancel', stop);
+    }
+    timeline.addEventListener('animationend', stop);
+    timeline.addEventListener('animationcancel', stop);
+    observer.observe(timeline);
   });
 </script>

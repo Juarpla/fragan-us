@@ -18,5 +18,4 @@ document.addEventListener('click', event => {
     back.inert = !showingReference;
     back.setAttribute('aria-hidden', String(!showingReference));
   }
-  target.setAttribute('aria-pressed', String(showingReference));
 });
