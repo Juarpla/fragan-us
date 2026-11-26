@@ -10,7 +10,8 @@ import { storeEnv } from '../../lib/runtime';
 const pageSize = 12;
 const { query, filters, page: requestedPage } = catalogSelection(Astro.url.searchParams);
 const products = await getCatalog(storeEnv);
-const matches = filterCatalog(products, filters, query);
+const matches = filterCatalog(products, filters, query)
+  .sort((a, b) => Number(b.stock > 0) - Number(a.stock > 0));
 const pageCount = Math.max(1, Math.ceil(matches.length / pageSize));
 const page = Math.min(requestedPage, pageCount);
 if (page !== requestedPage) return Astro.redirect(catalogHref(filters, query, page), 302);

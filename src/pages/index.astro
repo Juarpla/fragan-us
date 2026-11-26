@@ -52,7 +52,7 @@ const heroPhrases = ['parte de ti.', 'tu nota final.', 'tu sello único.', 'tu f
       <a class="inline-link" href="/perfumes">Ver todos los perfumes <ArrowRight size={17} aria-hidden="true" /></a>
     </div>
     {featured.length > 0 ? <div class="product-grid">{featured.map(product => <ProductCard product={product} highlight={highlights.get(product.slug)} />)}</div> :
-      <p class="muted">Aún no hay perfumes en el catálogo.</p>}
+      <p class="muted">{products.length ? 'Por ahora no hay perfumes disponibles.' : 'Aún no hay perfumes en el catálogo.'}</p>}
   </section>
 
   <section class="container home-shipping" id="envios" aria-labelledby="home-shipping-title">
