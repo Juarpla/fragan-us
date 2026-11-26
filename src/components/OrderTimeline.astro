@@ -1,22 +1,29 @@
 ---
 import { Check, ClipboardCheck, CreditCard, Package, Truck } from '@lucide/astro';
-const { status } = Astro.props;
-const active = status === 'SHIPPED' ? 3 : ['PAID', 'PACKING'].includes(status) ? 2 : status === 'PENDING_VERIFICATION' ? 1 : 0;
+import type { OrderRow } from '../lib/orders';
+
+type Props = { order: Pick<OrderRow, 'status' | 'created_at' | 'receipt_submitted_at' | 'preparation_started_at' | 'shipped_at'> };
+const { order } = Astro.props;
+const active = order.status === 'SHIPPED' ? 3 : ['PAID', 'PACKING'].includes(order.status) ? 2 : order.status === 'PENDING_VERIFICATION' ? 1 : 0;
 const steps = [
-  { label: 'Pago', Icon: CreditCard },
-  { label: 'Verificación', Icon: ClipboardCheck },
-  { label: 'En preparación', Icon: Package },
-  { label: 'Enviado', Icon: Truck },
+  { label: 'Pedido creado', Icon: CreditCard, timestamp: order.created_at },
+  { label: 'Verificación', Icon: ClipboardCheck, timestamp: order.receipt_submitted_at },
+  { label: 'En preparación', Icon: Package, timestamp: order.preparation_started_at },
+  { label: 'Enviado', Icon: Truck, timestamp: order.shipped_at },
 ];
+const date = new Intl.DateTimeFormat('es-PE', { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'America/Lima' });
+const time = new Intl.DateTimeFormat('es-PE', { hour: 'numeric', minute: '2-digit', timeZone: 'America/Lima' });
 ---
 <ol class="order-timeline" role="list" aria-label="Progreso de tu pedido">
-  {steps.map(({ label, Icon }, index) => (
-    <li class:list={[index < active && 'is-complete', index === active && 'is-current']}
+  {steps.map(({ label, Icon, timestamp }, index) => {
+    const recorded = timestamp && new Date(timestamp.replace(' ', 'T') + 'Z');
+    return <li class:list={[index < active && 'is-complete', index === active && 'is-current']}
         aria-current={index === active ? 'step' : undefined}>
       <span class="order-timeline-icon">
         {index < active ? <Check size={18} aria-hidden="true" /> : <Icon size={18} aria-hidden="true" />}
       </span>
-      <span>{label}{index < active && <span class="sr-only">, completado</span>}</span>
-    </li>
-  ))}
+      <span class="order-timeline-label">{label}{index < active && <span class="sr-only">, completado</span>}</span>
+      {recorded && <time datetime={recorded.toISOString()}><span>{date.format(recorded)}</span><span>{time.format(recorded)}</span></time>}
+    </li>;
+  })}
 </ol>

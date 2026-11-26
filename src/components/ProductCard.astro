@@ -1,18 +1,14 @@
 ---
+import FragranceVisual from './FragranceVisual.astro';
 import { Plus } from '@lucide/astro';
 import { money, type Product } from '../lib/catalog';
 const { product, catalogQuery = '', highlight, heading: Heading = 'h3' } = Astro.props as { product: Product; catalogQuery?: string; highlight?: string; heading?: 'h2' | 'h3' };
-const { slug, name, brand, stock, price_cents, image_url, volume, concentration, family, tone, badge } = product;
+const { slug, name, brand, stock, price_cents, image_url, volume, concentration, family } = product;
 const detailsHref = `/perfumes/${slug}${catalogQuery}`;
 const tastingNote = highlight ?? product.notes.opening?.split(',')[0]?.trim();
 ---
 <article class="product-card">
-  <div class:list={['product-visual', tone]}>
-    <a class="product-image-link" href={detailsHref} aria-label={`Ver ${name} de ${brand}`}>
-      <img src={image_url} alt={`Frasco de ${name} de ${brand}`} width="480" height="480" loading="lazy" />
-    </a>
-    {badge && <span class="product-badge">{badge}</span>}
-  </div>
+  <FragranceVisual product={product} href={detailsHref} />
   <div class="product-meta">
     <Heading class="product-name"><a href={detailsHref}>{name}</a></Heading>
     <p class="product-brand">{brand}</p>

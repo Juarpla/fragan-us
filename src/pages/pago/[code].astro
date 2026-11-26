@@ -1,5 +1,5 @@
 ---
-import { ArrowLeft, ArrowRight, Copy, Upload } from '@lucide/astro';
+import { ArrowLeft, ArrowRight, Clock3, Copy, Download, Upload } from '@lucide/astro';
 import Base from '../../layouts/Base.astro';
 import { money } from '../../lib/catalog';
 import { checkoutMode, validCode } from '../../lib/http';
@@ -21,7 +21,9 @@ const payable = order && isPayable(order, mode);
 const qrHref = order && `/api/orders/payment-qr?code=${order.order_code}`;
 const showQR = payable && mode === 'live' && Boolean(await storeEnv.RECEIPTS_BUCKET?.head('settings/payment-qr').catch(() => null));
 const deadline = payable && order.reserved_until ? new Date(order.reserved_until.replace(' ', 'T') + 'Z') : null;
-const deadlineLabel = deadline?.toLocaleTimeString('es-PE', { timeZone: 'America/Lima', hour: 'numeric', minute: '2-digit' });
+const serverTime = Date.now();
+const seconds = deadline ? Math.min(1800, Math.max(0, Math.ceil((deadline.getTime() - serverTime) / 1000))) : 0;
+const clock = [Math.floor(seconds / 60), seconds % 60].map(part => String(part).padStart(2, '0')).join(':');
 ---
 <Base title="Pagar pedido" minimal privatePage>
   <section class="container inner-section payment-page" data-payment-page>
@@ -30,15 +32,21 @@ const deadlineLabel = deadline?.toLocaleTimeString('es-PE', { timeZone: 'America
       <p class="inner-copy">Revisaremos tu pago antes de confirmar y preparar el pedido.</p>
       {order.is_demo === 1 && <p class="notice">Modo de prueba. Usa un comprobante ficticio.</p>}
       <div class="panel payment-panel">
-        <div class="payment-total"><div><h2>Pago con Yape o Plin</h2><p>Importe de los perfumes</p></div><strong>{money(order.total_cents)}</strong></div>
+        <div class="payment-total"><div><h2>Pago Digital</h2><p>Importe de los perfumes</p></div><strong>{money(order.total_cents)}</strong></div>
         <p class="notice payment-alert" role="status" data-expired-payment hidden={payable}>La reserva venció. Si ya pagaste, adjunta el comprobante para que revisemos tu pedido. Si aún no pagaste, vuelve a la tienda para hacer un nuevo pedido.</p>
-        {deadlineLabel && <p class="notice payment-alert" data-payment-deadline={deadline?.toISOString()}>Paga y envía el comprobante antes de las {deadlineLabel} (hora de Perú) para conservar tu reserva.</p>}
+        {deadline && <div class="payment-reservation" data-payment-deadline={deadline.getTime()} data-server-time={serverTime}>
+          <span><Clock3 size={19} aria-hidden="true" /> Tu reserva vence en</span>
+          <time role="timer" aria-label="Tiempo restante de tu reserva" datetime={deadline.toISOString()}>{clock}</time>
+        </div>}
         <div class="payment-content">
           {payable && phone && <div class="payment-destination" data-payment-destination>
             {showQR && qrHref && <a class="payment-qr" href={qrHref} target="_blank" rel="noopener noreferrer" aria-label="Abrir el QR de Yape en tamaño completo">
               <img src={qrHref} alt="Código QR de Yape para pagar a FraganUS" width="240" />
             </a>}
-            <button class="button secondary" type="button" data-copy={phone}><Copy size={16} aria-hidden="true" /> Copiar número de pago</button>
+            <div class="payment-method-actions">
+              {showQR && qrHref && <a class="button secondary payment-download" href={`${qrHref}&download=1`} download><Download size={16} aria-hidden="true" /> Descargar QR</a>}
+              <button class="button secondary" type="button" data-copy={phone}><Copy size={16} aria-hidden="true" /> Copiar número de pago</button>
+            </div>
             <span role="status" data-copy-status></span>
           </div>}
           <form class="payment-receipt" method="post" action="/api/orders/receipt" enctype="multipart/form-data" data-receipt-form>
@@ -63,27 +71,20 @@ const deadlineLabel = deadline?.toLocaleTimeString('es-PE', { timeZone: 'America
   </section>
 </Base>
 <script>
+  import { setupReservationTimer } from '../../scripts/reservation-timer';
+  import { showTemporaryStatus } from '../../scripts/temporary-status';
+
   const deadline = document.querySelector<HTMLElement>('[data-payment-deadline]');
-  if (deadline?.dataset.paymentDeadline) {
-    const expiresAt = Date.parse(deadline.dataset.paymentDeadline);
-    const showExpiry = () => {
-      if (Date.now() < expiresAt) return;
-      deadline.hidden = true;
-      document.querySelector<HTMLElement>('[data-payment-destination]')?.setAttribute('hidden', '');
-      document.querySelector<HTMLElement>('[data-expired-payment]')?.removeAttribute('hidden');
-    };
-    setTimeout(showExpiry, Math.max(0, expiresAt - Date.now()));
-    window.addEventListener('pageshow', showExpiry);
-    document.addEventListener('visibilitychange', showExpiry);
-  }
+  if (deadline) setupReservationTimer(deadline);
+
   const copy = document.querySelector<HTMLButtonElement>('[data-copy]');
   copy?.addEventListener('click', async () => {
-    const copyStatus = document.querySelector('[data-copy-status]')!;
+    const copyStatus = document.querySelector<HTMLElement>('[data-copy-status]')!;
     try {
       await navigator.clipboard.writeText(copy.dataset.copy!);
-      copyStatus.textContent = 'Número copiado.';
+      showTemporaryStatus(copyStatus, 'Número copiado.');
     } catch {
-      copyStatus.textContent = 'No pudimos copiar el número. Activa el acceso al portapapeles y vuelve a intentarlo.';
+      showTemporaryStatus(copyStatus, 'No pudimos copiar el número. Revisa el acceso al portapapeles.');
     }
   });
 

@@ -1,5 +1,5 @@
 ---
-import { Archive, ArrowUpRight, Box, ClipboardList, FileCheck, PackageCheck, QrCode, ShoppingBag, Truck } from '@lucide/astro';
+import { Archive, ArrowUpRight, Box, ClipboardList, FileCheck, PackageCheck, QrCode, ShoppingBag, Sparkles, Truck } from '@lucide/astro';
 import AdminProductForm from '../../components/AdminProductForm.astro';
 import Base from '../../layouts/Base.astro';
 import { money, type Product } from '../../lib/catalog';
@@ -12,7 +12,7 @@ if (denied) return denied;
 Astro.response.headers.set('Cache-Control', 'private, no-store');
 Astro.response.headers.set('Referrer-Policy', 'no-referrer');
 
-type StockRow = Pick<Product, 'slug' | 'name' | 'brand' | 'stock' | 'price_cents'> & { active: number };
+type StockRow = Pick<Product, 'slug' | 'name' | 'brand' | 'stock' | 'price_cents' | 'inspiration_name' | 'inspiration_image_url'> & { active: number };
 
 const db = storeEnv.DB;
 if (!db) return new Response('Base de datos no disponible.', { status: 503 });
@@ -35,7 +35,7 @@ const [orderResult, cartResult, stockResult] = await Promise.all([
       ORDER BY COALESCE(shipped_at, created_at) DESC, order_code DESC LIMIT ? OFFSET ?`)
     .bind(limit + 1, (page - 1) * limit).all<OrderRow>(),
   db.prepare("SELECT * FROM abandoned_carts WHERE status = 'ABANDONED' ORDER BY updated_at DESC LIMIT 30").all<CartRow>(),
-  db.prepare('SELECT slug, name, brand, stock, active, price_cents FROM products ORDER BY active DESC, position, name').all<StockRow>(),
+  db.prepare('SELECT slug, name, brand, stock, active, price_cents, inspiration_name, inspiration_image_url FROM products ORDER BY active DESC, position, name').all<StockRow>(),
 ]);
 const dateFormat = new Intl.DateTimeFormat('es-PE', { dateStyle: 'medium', timeStyle: 'short', timeZone: 'America/Lima' });
 const date = (value: string) => dateFormat.format(new Date(value.replace(' ', 'T') + 'Z'));
@@ -105,12 +105,31 @@ const whatsAppAction = (order: OrderRow) => {
             <div class="admin-record-actions">
               {order.status === 'PENDING_CONFIRMATION' && <button class="button primary" data-order={order.order_code} data-action="enable_payment">Habilitar pago</button>}
               {order.status === 'PENDING_VERIFICATION' && <button class="button primary" data-order={order.order_code} data-action="pay">Verificar pago</button>}
-              {['PAID', 'PACKING'].includes(order.status) && <button class="button primary" data-order={order.order_code} data-action="ship">Marcar como enviado</button>}
-              {order.receipt_r2_key && <a class="button secondary" href={`/api/admin/receipt?code=${order.order_code}`} rel="noreferrer" target="_blank">Ver comprobante</a>}
+              {order.receipt_r2_key && <a class="button secondary" href={`/api/admin/receipt?code=${order.order_code}`} rel="noreferrer" target="_blank">Ver comprobante de pago</a>}
               {order.is_demo !== 1 && <a class="button secondary" href={whatsApp.href} rel="noreferrer" target="_blank">{whatsApp.label} <ArrowUpRight size={15} aria-hidden="true" /></a>}
               {['PENDING_CONFIRMATION', 'PENDING_VERIFICATION'].includes(order.status) && <button class="button secondary" data-order={order.order_code} data-action="cancel">Cancelar pedido</button>}
             </div>
             <p class="error-message" role="alert"></p>
+            {['PAID', 'PACKING', 'SHIPPED'].includes(order.status) && <details class="admin-editor admin-dispatch">
+              <summary><Truck size={18} aria-hidden="true" /> {order.status === 'SHIPPED' ? 'Editar datos de envío' : 'Registrar envío'}</summary>
+              <form data-dispatch-form class="admin-editor-form" action="/api/admin/dispatch" method="post" enctype="multipart/form-data">
+                <input type="hidden" name="code" value={order.order_code} />
+                <input type="hidden" name="previousReceipt" value={order.shipping_receipt_key ?? ''} />
+                <input type="hidden" name="previousPassword" value={order.pickup_password ?? ''} />
+                <label class="field">Comprobante del transportista
+                  <input name="receipt" type="file" accept="application/pdf,image/jpeg,image/png,image/webp" required={!order.shipping_receipt_key} />
+                  <span class="muted">PDF, JPG, PNG o WebP, hasta 8 MB.</span>
+                </label>
+                <label class="field">Clave de recojo
+                  <input name="password" maxlength="80" value={order.pickup_password ?? ''} autocomplete="off" required />
+                </label>
+                <div class="admin-editor-actions">
+                  {order.shipping_receipt_key && <a class="button secondary" href={`/api/orders/shipping-receipt?code=${order.order_code}`} download>Descargar comprobante actual</a>}
+                  <button class="button primary" type="submit">{order.status === 'SHIPPED' ? 'Guardar datos de envío' : 'Marcar como enviado'}</button>
+                </div>
+                <p class="error-message" role="alert"></p>
+              </form>
+            </details>}
           </article>;
         }) : <p class="admin-empty">{filter === 'ARCHIVE' ? 'Aún no hay pedidos en el historial.' : 'No hay pedidos en esta etapa.'}</p>}
         {(page > 1 || orderResult.results.length > limit) && <nav class="checkout-actions" aria-label="Páginas de pedidos">
@@ -133,6 +152,24 @@ const whatsAppAction = (order: OrderRow) => {
               <button class="button secondary" type="submit">Guardar cambios</button>
               <p class="error-message" role="alert"></p>
             </form>
+            <details class="admin-editor admin-inspiration">
+              <summary><Sparkles size={17} aria-hidden="true" /> {product.inspiration_name ? `Inspiración: ${product.inspiration_name}` : 'Agregar inspiración'}</summary>
+              <form class="admin-editor-form" data-inspiration-form action="/api/admin/inspiration" method="post" enctype="multipart/form-data">
+                <input type="hidden" name="slug" value={product.slug} />
+                <input type="hidden" name="previousName" value={product.inspiration_name ?? ''} />
+                <input type="hidden" name="previousImage" value={product.inspiration_image_url ?? ''} />
+                <label class="field">Fragancia de referencia
+                  <input name="name" value={product.inspiration_name ?? ''} placeholder="Ej. Sauvage Elixir de Dior" maxlength="100" />
+                </label>
+                <label class="field">Foto de referencia (opcional)
+                  <input name="photo" type="file" accept="image/jpeg,image/png,image/webp" />
+                </label>
+                {product.inspiration_image_url && <label class="stock-visible"><input type="checkbox" name="removePhoto" /> Quitar la foto actual</label>}
+                <p class="muted">Deja el nombre en blanco para quitar la inspiración.</p>
+                <button class="button primary" type="submit">Guardar inspiración</button>
+                <p class="error-message" role="alert"></p>
+              </form>
+            </details>
           </article>
         ))}</div> : <p class="muted">Agrega tu primer perfume con su foto, precio y stock.</p>}
       </section>

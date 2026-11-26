@@ -1,5 +1,6 @@
 ---
 import { ArrowRight, ChevronRight, ExternalLink, Heart, Layers, ShoppingBag, SprayCan } from '@lucide/astro';
+import FragranceVisual from '../../components/FragranceVisual.astro';
 import Base from '../../layouts/Base.astro';
 import TikTok from '../../components/icons/TikTok.astro';
 import ProductCard from '../../components/ProductCard.astro';
@@ -25,7 +26,7 @@ const related = products.filter(item => item.slug !== product?.slug).slice(0, 4)
   {product ? <div class="container detail-section">
     <nav class="breadcrumbs" aria-label="Ruta de navegación"><a href="/">Inicio</a><ChevronRight size={14} /><a href={backToCatalog}>Perfumes</a><ChevronRight size={14} /><span aria-current="page">{product.name}</span></nav>
     <section class="detail-layout" aria-labelledby="product-title">
-      <div class:list={['detail-visual', product.tone]}><img src={product.image_url} width="480" height="480" alt={`Frasco de ${product.name} de ${product.brand}`} /></div>
+      <FragranceVisual product={product} />
       <div class="detail-info">
         <h1 id="product-title">{product.name}</h1>
         <p class="detail-identity">{product.brand} · {product.audience}</p>

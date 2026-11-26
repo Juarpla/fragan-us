@@ -1,0 +1,29 @@
+---
+import { RotateCw } from '@lucide/astro';
+import type { Product } from '../lib/catalog';
+
+interface Props {
+  product: Pick<Product, 'name' | 'brand' | 'image_url' | 'tone' | 'badge' | 'inspiration_name' | 'inspiration_image_url'>;
+  href?: string;
+}
+const { product, href } = Astro.props;
+const { name, brand, image_url, tone, badge, inspiration_name, inspiration_image_url } = product;
+const photoAlt = `Frasco de ${name} de ${brand}`;
+---
+<div class:list={[href ? 'product-visual' : 'detail-visual', tone, inspiration_name && 'has-inspiration']} data-inspiration={inspiration_name ? 'product' : undefined}>
+  <div class="fragrance-front" data-inspiration-front>
+    {href ? <a class="product-image-link" href={href} aria-label={`Ver ${name} de ${brand}`}>
+      <img src={image_url} alt={photoAlt} width="480" height="480" loading="lazy" />
+    </a> : <img src={image_url} alt={photoAlt} width="480" height="480" fetchpriority="high" />}
+    {href && badge && <span class="product-badge">{badge}</span>}
+  </div>
+  {inspiration_name && <>
+    <div class="fragrance-reference" data-inspiration-back inert aria-hidden="true">
+      {inspiration_image_url && <img src={inspiration_image_url} alt="" width="360" height="360" loading="lazy" />}
+      <div><p>Referencia olfativa</p><strong>{inspiration_name}</strong></div>
+    </div>
+    <button type="button" class="fragrance-switch" data-inspiration-toggle aria-pressed="false" aria-label={`Ver inspiración de ${name}`}>
+      <span data-inspiration-label>Inspiración</span><RotateCw size={17} aria-hidden="true" />
+    </button>
+  </>}
+</div>

@@ -3,6 +3,21 @@ import { catalogHref, catalogSelection, toggleCatalogFilter } from '../lib/catal
 const section = document.querySelector<HTMLElement>('#catalogo')!;
 const results = section.querySelector<HTMLElement>('[data-catalog-results]')!;
 const announcement = section.querySelector<HTMLElement>('[data-catalog-status]')!;
+const narrow = matchMedia('(max-width: 760px)');
+section.classList.add('catalog-enhanced');
+const filterPanel = () => results.querySelector<HTMLDetailsElement>('[data-catalog-panel]')!;
+const syncFilterPanel = () => {
+  filterPanel().open = !narrow.matches || ['#climas', '#ocasiones', '#preferencias'].includes(location.hash);
+};
+syncFilterPanel();
+narrow.addEventListener('change', syncFilterPanel);
+window.addEventListener('hashchange', () => {
+  if (['#climas', '#ocasiones', '#preferencias'].includes(location.hash)) {
+    filterPanel().open = true;
+    document.getElementById(location.hash.slice(1))?.scrollIntoView({ block: 'nearest' });
+  }
+});
+
 let renderedSearch = location.search;
 let pending: { controller: AbortController; url: URL } | undefined;
 
@@ -24,7 +39,9 @@ async function update(url: URL, control?: HTMLAnchorElement) {
     if (controller.signal.aborted) return;
 
     const keepFocus = results.contains(document.activeElement);
+    const panelOpen = filterPanel().open;
     results.replaceChildren(...updated.childNodes);
+    filterPanel().open = !narrow.matches || panelOpen;
     const canonical = new URL(response.url);
     renderedSearch = canonical.search;
     if (control) history.pushState(null, '', canonical);
@@ -56,6 +73,13 @@ async function update(url: URL, control?: HTMLAnchorElement) {
 }
 
 section.addEventListener('click', event => {
+  if ((event.target as Element).closest('[data-catalog-done]')) {
+    filterPanel().open = false;
+    const heading = results.querySelector<HTMLElement>('[data-results-heading]');
+    heading?.focus({ preventScroll: true });
+    heading?.scrollIntoView({ behavior: 'instant', block: 'start' });
+    return;
+  }
   const link = (event.target as Element).closest<HTMLAnchorElement>('a[data-catalog-control][href]');
   if (!link || event.defaultPrevented || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
   event.preventDefault();

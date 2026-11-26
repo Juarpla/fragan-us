@@ -32,7 +32,11 @@ export interface OrderRow {
   whatsapp_offers: number;
   stock_reserved: number;
   reserved_until: string | null;
+  receipt_submitted_at: string | null;
+  preparation_started_at: string | null;
   shipped_at: string | null;
+  shipping_receipt_key: string | null;
+  pickup_password: string | null;
   archive_at: string | null;
   payment_method: string | null;
   receipt_r2_key: string | null;

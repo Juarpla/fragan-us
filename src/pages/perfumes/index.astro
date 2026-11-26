@@ -1,5 +1,5 @@
 ---
-import { ArrowLeft, ArrowRight, MoonStar, Snowflake, Sun, Wind } from '@lucide/astro';
+import { ArrowLeft, ArrowRight, ChevronDown, MoonStar, SlidersHorizontal, Snowflake, Sun, Wind } from '@lucide/astro';
 import Base from '../../layouts/Base.astro';
 import ProductCard from '../../components/ProductCard.astro';
 import { catalogGroups, catalogHref, catalogParams, catalogSelection, filterCatalog, toggleCatalogFilter } from '../../lib/catalog-filters';
@@ -22,8 +22,12 @@ const filterIcons = { calido: Sun, fresco: Snowflake, diario: Wind, noche: MoonS
       <h1 id="catalog-title" class="inner-title">Perfumes árabes</h1>
       <p>Combina clima, ocasión y preferencia para encontrar tu próxima fragancia.</p>
     </div>
-    <div data-catalog-results>
-      <nav class="catalog-filters" aria-label="Filtrar perfumes">
+    <div class="catalog-layout" data-catalog-results>
+      <aside class="catalog-sidebar">
+        <details class="catalog-filter-panel" data-catalog-panel open>
+          <summary><SlidersHorizontal size={18} aria-hidden="true" /> Filtros {filters.length > 0 && <span class="filter-count">{filters.length}</span>} <ChevronDown class="filter-chevron" size={17} aria-hidden="true" /></summary>
+          <nav class="catalog-filters" aria-label="Filtrar perfumes">
+            <p class="catalog-filter-title"><SlidersHorizontal size={18} aria-hidden="true" /> Filtros</p>
         {catalogGroups.map(({ label, id, options }) =>
           <div class="catalog-filter-group" id={id} tabindex="-1" role="group" aria-label={label}>
             <span class="catalog-filter-label">{label}</span>
@@ -36,7 +40,11 @@ const filterIcons = { calido: Sun, fresco: Snowflake, diario: Wind, noche: MoonS
             </div>
           </div>
         )}
-      </nav>
+            <button type="button" class="button primary catalog-filter-done" data-catalog-done>Ver resultados <ArrowRight size={16} aria-hidden="true" /></button>
+          </nav>
+        </details>
+      </aside>
+      <div class="catalog-listing">
       <div class="query-status" tabindex="-1" data-results-heading>
         <p>{query && <>Resultados para «{query}» <span>· </span></>}<span>{matches.length} {matches.length === 1 ? 'perfume' : 'perfumes'}</span></p>
         {(query || filters.length > 0) && <a class="inline-link" data-catalog-control="clear" href={catalogHref()}>Limpiar filtros y búsqueda</a>}
@@ -51,6 +59,7 @@ const filterIcons = { calido: Sun, fresco: Snowflake, diario: Wind, noche: MoonS
         <span>Página {page} de {pageCount}</span>
         <a class="button secondary" href={page < pageCount ? catalogHref(filters, query, page + 1) : undefined} aria-disabled={page === pageCount ? 'true' : undefined} data-catalog-control="next" data-catalog-page>Siguiente <ArrowRight size={16} aria-hidden="true" /></a>
       </nav>}
+      </div>
     </div>
     <p class="sr-only" data-catalog-status role="status"></p>
   </section>

@@ -17,6 +17,8 @@ export interface Product {
   notes: { opening: string; heart: string; base: string };
   description: string;
   position: number;
+  inspiration_name?: string | null;
+  inspiration_image_url?: string | null;
 }
 
 export const sampleCatalog: Product[] = [

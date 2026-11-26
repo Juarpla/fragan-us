@@ -19,6 +19,13 @@ export const GET: APIRoute = async ({ url }) => {
   const type = photo?.httpMetadata?.contentType;
   if (!photo || !type || !['image/jpeg', 'image/png', 'image/webp'].includes(type)) return unavailable();
   return new Response(photo.body, {
-    headers: { 'Content-Type': type, 'Cache-Control': 'private, no-store', 'X-Content-Type-Options': 'nosniff' },
+    headers: {
+      'Content-Type': type,
+      'Cache-Control': 'private, no-store',
+      'X-Content-Type-Options': 'nosniff',
+      ...(url.searchParams.has('download') && {
+        'Content-Disposition': `attachment; filename="fraganus-qr-pago.${type === 'image/jpeg' ? 'jpg' : type.split('/')[1]}"`,
+      }),
+    },
   });
 };

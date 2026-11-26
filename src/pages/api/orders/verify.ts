@@ -7,7 +7,6 @@ const transitions = {
   enable_payment: { to: 'AWAITING_PAYMENT', from: ['PENDING_CONFIRMATION'] },
   pay: { to: 'PACKING', from: ['PENDING_VERIFICATION'] },
   pack: { to: 'PACKING', from: ['PAID'] },
-  ship: { to: 'SHIPPED', from: ['PAID', 'PACKING'] },
   cancel: { to: 'CANCELLED', from: ['PENDING_CONFIRMATION', 'AWAITING_PAYMENT', 'PENDING_VERIFICATION', 'EXPIRED'] },
 } as const;
 

@@ -1,18 +1,20 @@
 ---
-import { ArrowRight, Copy, Link2, RefreshCw } from '@lucide/astro';
+import { ArrowRight, Copy, Download, KeyRound, Link2, RefreshCw } from '@lucide/astro';
 import OrderTimeline from '../../components/OrderTimeline.astro';
 import WhatsApp from '../../components/icons/WhatsApp.astro';
 import Base from '../../layouts/Base.astro';
 import { money } from '../../lib/catalog';
 import { checkoutMode, validCode } from '../../lib/http';
-import { canSubmitReceipt, expireReservations, isPayable, type OrderRow } from '../../lib/orders';
+import { canSubmitReceipt, expireReservations, isPayable, orderItems, type OrderRow } from '../../lib/orders';
 import { storeEnv } from '../../lib/runtime';
 
 const code = Astro.params.code;
-type OrderStatus = Pick<OrderRow, 'order_code' | 'total_cents' | 'status' | 'is_demo'>;
+type OrderStatus = Pick<OrderRow, 'order_code' | 'items_json' | 'total_cents' | 'status' | 'is_demo' | 'created_at' | 'receipt_submitted_at' | 'preparation_started_at' |
+  'shipped_at' | 'pickup_password' | 'shipping_receipt_key'>;
 const db = storeEnv.DB;
 const order = validCode(code) && db && await expireReservations(db).then(() => db.prepare(
-  'SELECT order_code, total_cents, status, is_demo FROM orders WHERE order_code = ?',
+  `SELECT order_code, items_json, total_cents, status, is_demo, created_at, receipt_submitted_at, preparation_started_at,
+    shipped_at, pickup_password, shipping_receipt_key FROM orders WHERE order_code = ?`,
 ).bind(code).first<OrderStatus>());
 if (!order) Astro.response.status = 404;
 Astro.response.headers.set('Cache-Control', 'private, no-store');
@@ -21,7 +23,7 @@ const message: Record<string, string> = {
   PENDING_CONFIRMATION: 'Estamos revisando tu solicitud. Consulta este enlace para saber cuándo podrás pagar.',
   AWAITING_PAYMENT: 'Paga los perfumes por Yape o Plin y adjunta el comprobante.',
   EXPIRED: 'La reserva venció. Si ya pagaste, todavía puedes enviar tu comprobante para que lo revisemos.',
-  PENDING_VERIFICATION: 'Recibimos tu comprobante. Verificaremos el abono antes de confirmar tu pedido.',
+  PENDING_VERIFICATION: 'Verificaremos el pago antes de confirmar tu pedido.',
   PAID: 'Verificamos tu pago y estamos preparando el pedido.',
   PACKING: 'Verificamos tu pago y estamos preparando el pedido para enviarlo a la agencia que elegiste.',
   SHIPPED: 'Tu pedido ya fue enviado a la agencia de destino.',
@@ -40,13 +42,28 @@ const supportHref = !supportPhone || !/^51[0-9]{9}$/.test(supportPhone) ? undefi
     {order ? <div class="order-result">
       <h1 class="inner-title">{order.status === 'PENDING_CONFIRMATION' ? 'Recibimos tu solicitud' : 'Estado de tu pedido'}</h1>
       {order.is_demo === 1 && <p class="notice">Pedido de prueba.</p>}
-      <p class="inner-copy">{message[order.status]}</p>
+      <p class="inner-copy">{message[order.status]}{order.status !== 'CANCELLED' && ' El transportista cobra el flete por separado.'}</p>
       <div class="panel">
         <p class="muted">Código del pedido</p>
         <code class="order-code">{order.order_code}</code>
-        {order.status !== 'CANCELLED' && <OrderTimeline status={order.status} />}
+        {order.status !== 'CANCELLED' && <OrderTimeline order={order} />}
+        <details class="order-items">
+          <summary>Detalle del pedido</summary>
+          <ul>{orderItems(order.items_json).map(item => <li><span>{item.quantity} × {item.name}</span><strong>{money(item.price_cents * item.quantity)}</strong></li>)}</ul>
+        </details>
         <p class="order-freight"><span>Total</span><strong>{money(order.total_cents)}</strong></p>
-        {order.status !== 'CANCELLED' && <p class="muted mt-2">El transportista fija y cobra el flete por separado.</p>}
+        {order.status === 'SHIPPED' && (order.shipping_receipt_key || order.pickup_password) && (
+          <section class="order-dispatch" aria-labelledby="order-dispatch-title">
+            <h2 id="order-dispatch-title">Recojo en agencia</h2>
+            <div class="order-dispatch-actions">
+              {order.shipping_receipt_key && <a class="button secondary" href={`/api/orders/shipping-receipt?code=${order.order_code}`} download><Download size={17} aria-hidden="true" /> Descargar comprobante de envío</a>}
+              {order.pickup_password && <details class="pickup-disclosure">
+                <summary><KeyRound size={17} aria-hidden="true" /> <span>Clave de recojo</span></summary>
+                <code>{order.pickup_password}</code>
+              </details>}
+            </div>
+          </section>
+        )}
         <div class="order-share" data-order-share>
           <p class="muted">Guarda el enlace para consultar el estado de tu pedido.</p>
           <div class="order-share-actions">
@@ -68,6 +85,8 @@ const supportHref = !supportPhone || !/^51[0-9]{9}$/.test(supportPhone) ? undefi
 </Base>
 
 <script>
+  import { showTemporaryStatus } from '../../scripts/temporary-status';
+
   const share = document.querySelector('[data-order-share]');
   const status = share?.querySelector<HTMLElement>('[data-order-copy-status]');
   const fallback = share?.querySelector<HTMLInputElement>('[data-order-copy-value]');
@@ -81,9 +100,9 @@ const supportHref = !supportPhone || !/^51[0-9]{9}$/.test(supportPhone) ? undefi
       status.textContent = '';
       try {
         await navigator.clipboard.writeText(value);
-        status.textContent = code ? 'Código copiado.' : 'Enlace copiado.';
+        showTemporaryStatus(status, code ? 'Código copiado.' : 'Enlace copiado.');
       } catch {
-        status.textContent = 'Selecciona y copia el texto.';
+        showTemporaryStatus(status, 'Selecciona y copia el texto.');
         fallback.value = value;
         fallback.hidden = false;
         fallback.focus();
