@@ -21,15 +21,17 @@ const product = record && {
   ...record, climate: JSON.parse(record.climate), occasions: JSON.parse(record.occasions), notes: JSON.parse(record.notes),
 };
 if (!product) Astro.response.status = 404;
+const inventoryPage = `/admin/catalogo${Astro.url.search}`;
+const returnToInventory = `${inventoryPage}#stock`;
 ---
 <AdminLayout title="Editar perfume" current="catalogo">
   <div class="admin-layout">
     <nav class="admin-section-nav" aria-label="Acciones del catálogo">
-      <a href="/admin/catalogo#stock"><Box size={18} aria-hidden="true" /> Inventario</a>
-      <a href="/admin/catalogo#create-product"><Plus size={18} aria-hidden="true" /> Agregar perfume</a>
+      <a href={returnToInventory}><Box size={18} aria-hidden="true" /> Inventario</a>
+      <a href={`${inventoryPage}#create-product`}><Plus size={18} aria-hidden="true" /> Agregar perfume</a>
     </nav>
-    <section class="panel admin-section" aria-labelledby="product-editor-title">
-      <a class="inline-link admin-back-link" href="/admin/catalogo#stock"><ArrowLeft size={16} aria-hidden="true" /> Volver al catálogo</a>
+    <section class="panel admin-section" aria-labelledby="product-editor-title" data-inventory-return={returnToInventory}>
+      <a class="inline-link admin-back-link" href={returnToInventory}><ArrowLeft size={16} aria-hidden="true" /> Volver al catálogo</a>
       <h2 id="product-editor-title">{product ? `Editar ${product.name}` : 'No se encontró el perfume'}</h2>
       {product && <AdminProductForm product={product} />}
     </section>

@@ -20,15 +20,14 @@ const highlights = new Map([
 ]);
 const curated = [...highlights.keys()].flatMap(slug => products.find(product => product.slug === slug) ?? []);
 const featured = [...curated, ...products.filter(product => !highlights.has(product.slug))].slice(0, 4);
+const heroPhrases = ['parte de ti.', 'tu nota final.', 'tu sello único.', 'tu firma.', 'tu ritual.', 'pura actitud.', 'una huella.'];
 ---
 <Base>
   <section class="hero container" aria-labelledby="hero-title">
     <div class="hero-copy">
-      <h1 id="hero-title">El perfume es <span class="sr-only">parte de ti.</span>
+      <h1 id="hero-title">El perfume es <span class="sr-only">{heroPhrases[0]}</span>
         <em class="hero-phrase" aria-hidden="true">
-          <span>parte de ti.</span>
-          <span>tu nota final.</span>
-          <span>tu sello único.</span>
+          {heroPhrases.map((phrase, index) => <span data-current={index === 0 || undefined}>{phrase}</span>)}
         </em>
       </h1>
       <p>Descubre perfumes importados que van con tu estilo, tu clima y tus planes.</p>

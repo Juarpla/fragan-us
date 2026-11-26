@@ -14,6 +14,8 @@ export async function save(control: HTMLButtonElement, message: HTMLElement, url
   }
 }
 
+const inventoryReturn = document.querySelector<HTMLElement>('[data-inventory-return]')?.dataset.inventoryReturn ?? '/admin/catalogo#stock';
+
 document.querySelectorAll<HTMLFormElement>('[data-product-form], [data-stock]').forEach(form => {
   form.addEventListener('submit', async event => {
     event.preventDefault();
@@ -29,7 +31,7 @@ document.querySelectorAll<HTMLFormElement>('[data-product-form], [data-stock]').
     } : { method: form.dataset.edit ? 'PUT' : 'POST', body: data };
     if (await save(button, message, '/api/admin/products', init)) {
       sessionStorage.setItem('fraganus:admin-feedback', slug ? 'Inventario actualizado.' : 'Perfume guardado.');
-      location.assign('/admin/catalogo#stock');
+      location.assign(inventoryReturn);
     }
   });
 });
@@ -45,7 +47,7 @@ document.querySelectorAll<HTMLFormElement>('[data-inspiration-form]').forEach(fo
     });
     if (!saved) return;
     sessionStorage.setItem('fraganus:admin-feedback', 'Inspiración guardada.');
-    location.assign('/admin/catalogo#stock');
+    location.assign(inventoryReturn);
   });
 });
 

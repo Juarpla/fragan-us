@@ -2,9 +2,11 @@
 import AdminLayout from '../../layouts/AdminLayout.astro';
 import { guardAdmin } from '../../lib/http';
 import { storeEnv } from '../../lib/runtime';
-import { ArrowUpRight, Box, Plus, Sparkles } from '@lucide/astro';
+import { ArrowUpRight, Box, Plus, Search, Sparkles } from '@lucide/astro';
 import AdminProductForm from '../../components/AdminProductForm.astro';
 import { productPhotoPlaceholder, type Product } from '../../lib/catalog';
+import { searchableText } from '../../lib/catalog-filters';
+import { expireReservations } from '../../lib/orders';
 const denied = await guardAdmin(Astro.request, storeEnv);
 if (denied) return denied;
 Astro.response.headers.set('Cache-Control', 'private, no-store');
@@ -13,7 +15,42 @@ Astro.response.headers.set('Referrer-Policy', 'no-referrer');
 const db = storeEnv.DB;
 if (!db) return new Response('Base de datos no disponible.', { status: 503 });
 type StockRow = Pick<Product, 'slug' | 'name' | 'brand' | 'stock' | 'price_cents' | 'inspiration_name' | 'inspiration_image_url' | 'image_url' | 'tone'> & { active: number };
-const { results: stock } = await db.prepare('SELECT slug, name, brand, stock, active, price_cents, inspiration_name, inspiration_image_url, image_url, tone FROM products ORDER BY active DESC, position, name').all<StockRow>();
+await expireReservations(db);
+const { results: inventory } = await db.prepare('SELECT slug, name, brand, stock, active, price_cents, inspiration_name, inspiration_image_url, image_url, tone FROM products ORDER BY active DESC, position, name').all<StockRow>();
+
+const params = Astro.url.searchParams;
+const query = (params.get('q') ?? '').trim().slice(0, 80);
+const visibilityOptions = { all: 'Todos', visible: 'Visibles', hidden: 'Ocultos' };
+const stockOptions = { all: 'Todas', available: 'Con stock', empty: 'Sin stock' };
+const sortOptions = { visible: 'Visibles primero', 'price-asc': 'Precio de menor a mayor', 'price-desc': 'Precio de mayor a menor', empty: 'Sin stock primero' };
+
+function selected<T extends Record<string, string>>(name: string, options: T, fallback: keyof T) {
+  const value = params.get(name);
+  return value && Object.hasOwn(options, value) ? value as keyof T : fallback;
+}
+
+const visibility = selected('visibilidad', visibilityOptions, 'all');
+const availability = selected('stock', stockOptions, 'all');
+const sort = selected('orden', sortOptions, 'visible');
+const words = query ? searchableText(query).split(/\s+/) : [];
+const stock = inventory.filter(product => {
+  if (visibility !== 'all' && Boolean(product.active) !== (visibility === 'visible')) return false;
+  if (availability !== 'all' && (product.stock > 0) !== (availability === 'available')) return false;
+  const nameAndBrand = searchableText(`${product.name} ${product.brand}`);
+  return words.every(word => nameAndBrand.includes(word));
+});
+
+if (sort === 'price-asc') stock.sort((a, b) => a.price_cents - b.price_cents);
+if (sort === 'price-desc') stock.sort((a, b) => b.price_cents - a.price_cents);
+if (sort === 'empty') stock.sort((a, b) => Number(a.stock > 0) - Number(b.stock > 0));
+
+const inventoryPath = '/admin/catalogo';
+const applied = new URLSearchParams();
+if (query) applied.set('q', query);
+if (visibility !== 'all') applied.set('visibilidad', visibility);
+if (availability !== 'all') applied.set('stock', availability);
+if (sort !== 'visible') applied.set('orden', sort);
+const inventorySearch = applied.size ? `?${applied}` : '';
 ---
 <AdminLayout title="Catálogo y stock" current="catalogo">
   <div class="admin-layout">
@@ -21,14 +58,33 @@ const { results: stock } = await db.prepare('SELECT slug, name, brand, stock, ac
       <a href="#stock"><Box size={18} aria-hidden="true" /> Inventario</a>
       <a href="#create-product" data-open-product><Plus size={18} aria-hidden="true" /> Agregar perfume</a>
     </nav>
-    <section class="panel admin-section" aria-labelledby="stock">
+    <section class="panel admin-section" aria-labelledby="stock" data-inventory-return={`${inventoryPath}${inventorySearch}#stock`}>
       <h2 id="stock">Catálogo y stock</h2>
       <AdminProductForm />
+      {inventory.length > 0 && <form class="inventory-toolbar" action={`${inventoryPath}#stock`} method="get" aria-label="Buscar y filtrar inventario">
+        <label class="field inventory-search">Buscar perfume
+          <input name="q" type="search" value={query} maxlength="80" placeholder="Nombre o marca" />
+        </label>
+        <label class="field">Visibilidad
+          <select name="visibilidad">{Object.entries(visibilityOptions).map(([value, label]) => <option value={value} selected={visibility === value}>{label}</option>)}</select>
+        </label>
+        <label class="field">Unidades
+          <select name="stock">{Object.entries(stockOptions).map(([value, label]) => <option value={value} selected={availability === value}>{label}</option>)}</select>
+        </label>
+        <label class="field inventory-sort">Ordenar por
+          <select name="orden">{Object.entries(sortOptions).map(([value, label]) => <option value={value} selected={sort === value}>{label}</option>)}</select>
+        </label>
+        <button class="button secondary" type="submit"><Search size={16} aria-hidden="true" /> Aplicar</button>
+      </form>}
+      {inventory.length > 0 && <div class="inventory-results">
+        <p>{applied.size ? `${stock.length} de ${inventory.length} perfumes` : `${inventory.length} ${inventory.length === 1 ? 'perfume' : 'perfumes'}`}</p>
+        {applied.size > 0 && <a class="inline-link" href={`${inventoryPath}#stock`}>Limpiar filtros</a>}
+      </div>}
       {stock.length ? <div class="admin-stock-list">{stock.map(product => (
         <article class="admin-record">
           <div class="admin-stock-product">
             <img src={product.image_url} alt="" width="52" height="56" class={product.tone} loading="lazy" />
-            <div><strong>{product.name}</strong><p>{product.brand} · {!product.active ? 'Oculto' : product.stock ? 'Disponible' : 'Agotado'}{product.image_url === productPhotoPlaceholder && ' · Foto pendiente'}</p><a class="inline-link" href={`/admin/catalogo/${product.slug}`}>Editar perfume <ArrowUpRight size={13} aria-hidden="true" /></a></div>
+            <div><strong>{product.name}</strong><p>{product.brand} · {product.stock ? 'Disponible' : 'Agotado'}{!product.active && ' · Oculto'}{product.image_url === productPhotoPlaceholder && ' · Foto pendiente'}</p><a class="inline-link" href={`/admin/catalogo/${product.slug}${inventorySearch}`}>Editar perfume <ArrowUpRight size={13} aria-hidden="true" /></a></div>
           </div>
           <form class="admin-stock-form" data-stock={product.slug} data-previous-stock={product.stock} data-previous-active={product.active} data-previous-price={product.price_cents}>
             <label class="field">Precio (S/)<input name="price" type="number" inputmode="decimal" min=".01" max="160" step=".01" value={(product.price_cents / 100).toFixed(2)} required /></label>
@@ -56,10 +112,49 @@ const { results: stock } = await db.prepare('SELECT slug, name, brand, stock, ac
             </form>
           </details>
         </article>
-      ))}</div> : <p class="muted">Agrega tu primer perfume con su nombre, marca y precio.</p>}
+      ))}</div> : <p class="admin-empty">{inventory.length ? 'No encontramos perfumes con estos filtros.' : 'Agrega tu primer perfume con su nombre, marca y precio.'}</p>}
     </section>
   </div>
 </AdminLayout>
+<style>
+  .inventory-toolbar {
+    display: grid;
+    grid-template-columns: minmax(150px, 1.4fr) minmax(110px, .85fr) minmax(110px, .85fr) minmax(170px, 1.25fr) auto;
+    align-items: end;
+    gap: 10px;
+    margin-top: 14px;
+    padding: 14px;
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    background: #faf7fb;
+  }
+  .inventory-toolbar .field { min-width: 0; }
+  .inventory-toolbar :is(input, select) { width: 100%; }
+  .inventory-toolbar input::placeholder { color: var(--muted); }
+  .inventory-toolbar .button { min-height: 44px; padding-inline: 12px; }
+  .inventory-toolbar svg { flex: none; }
+  .inventory-results {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 4px 14px;
+    min-height: 43px;
+    color: var(--muted);
+    font-size: .875rem;
+  }
+  .inventory-results a { min-height: 44px; }
+  @media (max-width: 1120px) {
+    .inventory-toolbar { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .inventory-search { grid-column: 1 / -1; }
+    .inventory-toolbar .button { justify-self: start; }
+  }
+  @media (max-width: 480px) {
+    .inventory-toolbar { padding: 12px; }
+    .inventory-sort, .inventory-toolbar .button { grid-column: 1 / -1; }
+    .inventory-toolbar .button { width: 100%; }
+  }
+</style>
 <script>
   const editor = document.querySelector<HTMLDetailsElement>('#create-product');
   if (editor && location.hash === '#create-product') editor.open = true;

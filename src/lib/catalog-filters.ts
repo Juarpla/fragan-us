@@ -7,7 +7,7 @@ export const catalogGroups = [
 ];
 
 const audienceKeys = { 'Para él': 'el', 'Para ella': 'ella', Unisex: 'unisex' };
-const searchableText = (value: string) => value.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+export const searchableText = (value: string) => value.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
 
 export function catalogSelection(params: URLSearchParams) {
   const requested = params.getAll('f');
