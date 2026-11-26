@@ -1,0 +1,29 @@
+---
+import WhatsApp from './icons/WhatsApp.astro';
+import { storeEnv } from '../lib/runtime';
+
+interface Props {
+  placement?: 'home' | 'catalog';
+  label?: string;
+  message?: string;
+}
+
+const { placement, label, message = 'Hola, quisiera hacer una consulta sobre FraganUS.' } = Astro.props;
+const contact = storeEnv.SUPPORT_WHATSAPP;
+const href = contact && /^51\d{9}$/.test(contact)
+  ? `https://wa.me/${contact}?${new URLSearchParams({ text: message })}` : undefined;
+const linkProps = { class: 'button whatsapp-support', href, target: '_blank', rel: 'noopener noreferrer' };
+const linkLabel = label ?? (placement === 'catalog' ? 'WhatsApp' : 'Contactar por WhatsApp');
+const content = placement === 'home'
+  ? { className: 'container home-support', title: '¿Cómo podemos ayudarte?', copy: 'Resolvemos tus dudas sobre perfumes, compras y envíos.' }
+  : placement === 'catalog'
+    ? { className: 'catalog-support', title: '¿Necesitas ayuda?', copy: 'Te ayudamos a elegir.' }
+    : undefined;
+const headingId = content && `${placement}-support-title`;
+---
+{href && (content
+  ? <section class={content.className} aria-labelledby={headingId}>
+    <div><h2 id={headingId}>{content.title}</h2><p>{content.copy}</p></div>
+    <a {...linkProps}><WhatsApp /> {linkLabel}</a>
+  </section>
+  : <a {...linkProps}><WhatsApp /> {linkLabel}</a>)}

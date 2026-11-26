@@ -2,6 +2,7 @@
 import { ArrowLeft, ArrowRight, ChevronDown, MoonStar, SlidersHorizontal, Snowflake, Sun, Wind } from '@lucide/astro';
 import Base from '../../layouts/Base.astro';
 import ProductCard from '../../components/ProductCard.astro';
+import WhatsAppSupport from '../../components/WhatsAppSupport.astro';
 import { catalogGroups, catalogHref, catalogParams, catalogSelection, filterCatalog, toggleCatalogFilter } from '../../lib/catalog-filters';
 import { getCatalog } from '../../lib/db';
 import { storeEnv } from '../../lib/runtime';
@@ -43,6 +44,7 @@ const filterIcons = { calido: Sun, fresco: Snowflake, diario: Wind, noche: MoonS
             <button type="button" class="button primary catalog-filter-done" data-catalog-done>Ver resultados <ArrowRight size={16} aria-hidden="true" /></button>
           </nav>
         </details>
+        <WhatsAppSupport placement="catalog" message="Hola, ¿me ayudan a elegir un perfume de FraganUS?" />
       </aside>
       <div class="catalog-listing">
       <div class="query-status" tabindex="-1" data-results-heading>

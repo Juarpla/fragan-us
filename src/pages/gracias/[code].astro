@@ -1,7 +1,7 @@
 ---
 import { ArrowRight, Copy, Download, KeyRound, Link2, RefreshCw } from '@lucide/astro';
 import OrderTimeline from '../../components/OrderTimeline.astro';
-import WhatsApp from '../../components/icons/WhatsApp.astro';
+import WhatsAppSupport from '../../components/WhatsAppSupport.astro';
 import Base from '../../layouts/Base.astro';
 import { money } from '../../lib/catalog';
 import { checkoutMode, validCode } from '../../lib/http';
@@ -40,9 +40,6 @@ if (db && legacySlugs.length) {
 const mode = checkoutMode(storeEnv);
 const payable = order && isPayable(order, mode);
 const submitReceipt = order && canSubmitReceipt(order, mode);
-const supportPhone = storeEnv.SUPPORT_WHATSAPP;
-const supportHref = !supportPhone || !/^51[0-9]{9}$/.test(supportPhone) ? undefined
-  : `https://wa.me/${supportPhone}?${new URLSearchParams({ text: 'Hola, necesito ayuda con mi pedido de FraganUS.' })}`;
 
 ---
 <Base title="Estado del pedido" minimal privatePage>
@@ -94,7 +91,7 @@ const supportHref = !supportPhone || !/^51[0-9]{9}$/.test(supportPhone) ? undefi
         {submitReceipt && <a class="button primary" href={`/pago/${order.order_code}`}>{payable ? 'Continuar al pago' : 'Enviar comprobante'} <ArrowRight size={17} aria-hidden="true" /></a>}
         {!payable && <a class={`button ${submitReceipt ? 'secondary' : 'primary'}`} href="/perfumes">Volver a la tienda <ArrowRight size={17} aria-hidden="true" /></a>}
         <a class="button secondary" href={`/gracias/${order.order_code}`}>Actualizar estado <RefreshCw size={16} aria-hidden="true" /></a>
-        {supportHref && <a class="button whatsapp-support" href={supportHref} target="_blank" rel="noopener noreferrer"><WhatsApp /> Soporte por WhatsApp</a>}
+        <WhatsAppSupport label="Soporte por WhatsApp" message="Hola, necesito ayuda con mi pedido de FraganUS." />
       </div>
     </div> : <div><h1 class="inner-title">Pedido no encontrado</h1><p class="inner-copy">Revisa el código del enlace de confirmación.</p><a class="button primary" href="/">Ir a la tienda <ArrowRight size={17} aria-hidden="true" /></a></div>}
   </section>

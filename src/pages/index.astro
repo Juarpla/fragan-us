@@ -2,6 +2,7 @@
 import { ArrowDown, ArrowRight, CreditCard, MapPin, Sparkles, Truck } from '@lucide/astro';
 import Base from '../layouts/Base.astro';
 import ProductCard from '../components/ProductCard.astro';
+import WhatsAppSupport from '../components/WhatsAppSupport.astro';
 import { catalogHref, catalogSelection } from '../lib/catalog-filters';
 import { getCatalog } from '../lib/db';
 import { storeEnv } from '../lib/runtime';
@@ -65,4 +66,5 @@ const featured = [...curated, ...products.filter(product => !highlights.has(prod
       <div><MapPin size={22} aria-hidden="true" /><h3>Flete por separado</h3><p>El transportista cobra el flete cuando recoges tu pedido.</p></div>
     </div>
   </section>
+  <WhatsAppSupport placement="home" />
 </Base>
