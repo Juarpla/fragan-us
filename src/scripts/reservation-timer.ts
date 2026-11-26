@@ -17,7 +17,7 @@ export function setupReservationTimer(element: HTMLElement) {
   const tick = () => {
     clearTimeout(timer);
     const elapsed = initialElapsed + Math.max(performance.now() - start, Date.now() - wallStart);
-    const seconds = Math.min(1800, Math.max(0, Math.ceil((deadline - serverTime - elapsed) / 1000)));
+    const seconds = Math.max(0, Math.ceil((deadline - serverTime - elapsed) / 1000));
     time.textContent = formatRemaining(seconds);
     if (seconds) {
       timer = setTimeout(tick, 250);

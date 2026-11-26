@@ -26,7 +26,7 @@ export const POST: APIRoute = async ({ request }) => {
   try {
     const order = await getOrder();
     if (!order) return json({ error: 'Pedido no encontrado.' }, 404);
-    if (!allowed.includes(order.status)) return json({ error: 'Verifica el pago antes de registrar el envío.' }, 409);
+    if (!allowed.includes(order.status)) return json({ error: 'Confirma el pago antes de registrar el envío.' }, 409);
     // Both values are optimistic tokens. A second open tab cannot overwrite a saved shipment.
     if (form?.get('previousReceipt') !== (order.shipping_receipt_key ?? '') ||
         form?.get('previousPassword') !== (order.pickup_password ?? '')) {

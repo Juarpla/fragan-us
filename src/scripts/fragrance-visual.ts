@@ -8,7 +8,6 @@ document.addEventListener('click', event => {
   const showingReference = visual.dataset.inspiration === 'product';
   const front = visual.querySelector<HTMLElement>('[data-inspiration-front]');
   const back = visual.querySelector<HTMLElement>('[data-inspiration-back]');
-  const label = target.querySelector('[data-inspiration-label]');
 
   visual.dataset.inspiration = showingReference ? 'reference' : 'product';
   if (front) {
@@ -20,5 +19,4 @@ document.addEventListener('click', event => {
     back.setAttribute('aria-hidden', String(!showingReference));
   }
   target.setAttribute('aria-pressed', String(showingReference));
-  if (label) label.textContent = showingReference ? 'Ver perfume' : 'Inspiración';
 });

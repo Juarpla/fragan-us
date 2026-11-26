@@ -1,7 +1,10 @@
 import type { OrderItem } from './db';
+import type { DocumentType } from './checkout-document';
+
+export const reservationMinutes = 15;
 
 export const orderStages = [
-  { id: 'PENDING_VERIFICATION', label: 'Por verificar' },
+  { id: 'PENDING_VERIFICATION', label: 'Por confirmar' },
   { id: 'PACKING', label: 'En preparación' },
   { id: 'SHIPPED', label: 'Enviados' },
 ] as const;
@@ -10,7 +13,7 @@ export const orderStatusLabel: Record<string, string> = {
   PENDING_CONFIRMATION: 'Solicitud registrada',
   AWAITING_PAYMENT: 'Pago pendiente',
   EXPIRED: 'Reserva vencida',
-  PENDING_VERIFICATION: 'Por verificar',
+  PENDING_VERIFICATION: 'Por confirmar',
   PAID: 'En preparación',
   PACKING: 'En preparación',
   SHIPPED: 'Enviado',
@@ -21,6 +24,8 @@ export interface OrderRow {
   order_code: string;
   customer_name: string;
   customer_phone: string;
+  document_type: DocumentType | null;
+  document_number: string | null;
   city: string;
   shipping_address: string;
   shipping_method: string;

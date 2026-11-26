@@ -22,3 +22,16 @@ export const POST: APIRoute = async ({ request }) => {
     return json({ error: 'No pudimos guardar el QR. Intenta de nuevo.' }, 503);
   }
 };
+
+export const GET: APIRoute = async ({ request }) => {
+  const denied = await guardAdmin(request, storeEnv);
+  if (denied) return denied;
+  const headers = new Headers({ 'Cache-Control': 'private, no-store', 'X-Content-Type-Options': 'nosniff' });
+  const qr = await storeEnv.RECEIPTS_BUCKET?.get('settings/payment-qr');
+  const mime = qr?.httpMetadata?.contentType;
+  if (!qr || !mime || !['image/jpeg', 'image/png', 'image/webp'].includes(mime)) {
+    return new Response(null, { status: 404, headers });
+  }
+  headers.set('Content-Type', mime);
+  return new Response(qr.body, { headers });
+};

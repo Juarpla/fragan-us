@@ -1,0 +1,69 @@
+---
+import AdminLayout from '../../layouts/AdminLayout.astro';
+import { guardAdmin } from '../../lib/http';
+import { storeEnv } from '../../lib/runtime';
+import { ArrowUpRight, Box, Plus, Sparkles } from '@lucide/astro';
+import AdminProductForm from '../../components/AdminProductForm.astro';
+import type { Product } from '../../lib/catalog';
+const denied = await guardAdmin(Astro.request, storeEnv);
+if (denied) return denied;
+Astro.response.headers.set('Cache-Control', 'private, no-store');
+Astro.response.headers.set('Referrer-Policy', 'no-referrer');
+
+const db = storeEnv.DB;
+if (!db) return new Response('Base de datos no disponible.', { status: 503 });
+type StockRow = Pick<Product, 'slug' | 'name' | 'brand' | 'stock' | 'price_cents' | 'inspiration_name' | 'inspiration_image_url' | 'image_url' | 'tone'> & { active: number };
+const { results: stock } = await db.prepare('SELECT slug, name, brand, stock, active, price_cents, inspiration_name, inspiration_image_url, image_url, tone FROM products ORDER BY active DESC, position, name').all<StockRow>();
+---
+<AdminLayout title="Catálogo y stock" current="catalogo">
+  <div class="admin-layout">
+    <nav class="admin-section-nav" aria-label="Acciones del catálogo">
+      <a href="#stock"><Box size={18} aria-hidden="true" /> Inventario</a>
+      <a href="#create-product" data-open-product><Plus size={18} aria-hidden="true" /> Agregar perfume</a>
+    </nav>
+    <section class="panel admin-section" aria-labelledby="stock">
+      <h2 id="stock">Catálogo y stock</h2>
+      <AdminProductForm />
+      {stock.length ? <div class="admin-stock-list">{stock.map(product => (
+        <article class="admin-record">
+          <div class="admin-stock-product">
+            <img src={product.image_url} alt="" width="52" height="56" class={product.tone} loading="lazy" />
+            <div><strong>{product.name}</strong><p>{product.brand} · {!product.active ? 'Oculto' : product.stock ? 'Disponible' : 'Agotado'}</p><a class="inline-link" href={`/admin/catalogo/${product.slug}`}>Editar perfume <ArrowUpRight size={13} aria-hidden="true" /></a></div>
+          </div>
+          <form class="admin-stock-form" data-stock={product.slug} data-previous-stock={product.stock} data-previous-active={product.active} data-previous-price={product.price_cents}>
+            <label class="field">Precio (S/)<input name="price" type="number" inputmode="decimal" min=".01" max="160" step=".01" value={(product.price_cents / 100).toFixed(2)} required /></label>
+            <label class="field">Unidades disponibles<input name="stock" type="number" min="0" max="10000" step="1" value={product.stock} required /></label>
+            <label class="stock-visible"><input name="active" type="checkbox" checked={Boolean(product.active)} /> Mostrar en catálogo</label>
+            <button class="button secondary" type="submit">Guardar cambios</button>
+            <p class="error-message" role="alert"></p>
+          </form>
+          <details class="admin-editor admin-inspiration">
+            <summary><Sparkles size={17} aria-hidden="true" /> {product.inspiration_name ? `Inspiración: ${product.inspiration_name}` : 'Agregar inspiración'}</summary>
+            <form class="admin-editor-form" data-inspiration-form action="/api/admin/inspiration" method="post" enctype="multipart/form-data">
+              <input type="hidden" name="slug" value={product.slug} />
+              <input type="hidden" name="previousName" value={product.inspiration_name ?? ''} />
+              <input type="hidden" name="previousImage" value={product.inspiration_image_url ?? ''} />
+              <label class="field">Fragancia de referencia
+                <input name="name" value={product.inspiration_name ?? ''} placeholder="Ej. Sauvage Elixir de Dior" maxlength="100" />
+              </label>
+              <label class="field">Foto de referencia (opcional)
+                <input name="photo" type="file" accept="image/jpeg,image/png,image/webp" />
+              </label>
+              {product.inspiration_image_url && <label class="stock-visible"><input type="checkbox" name="removePhoto" /> Quitar la foto actual</label>}
+              <p class="muted">Deja el nombre en blanco para quitar la inspiración.</p>
+              <button class="button primary" type="submit">Guardar inspiración</button>
+              <p class="error-message" role="alert"></p>
+            </form>
+          </details>
+        </article>
+      ))}</div> : <p class="muted">Agrega tu primer perfume con su foto, precio y stock.</p>}
+    </section>
+  </div>
+</AdminLayout>
+<script>
+  const editor = document.querySelector<HTMLDetailsElement>('#create-product');
+  if (editor && location.hash === '#create-product') editor.open = true;
+  document.querySelector('[data-open-product]')?.addEventListener('click', () => {
+    if (editor) editor.open = true;
+  });
+</script>

@@ -28,7 +28,7 @@ document.querySelectorAll<HTMLButtonElement>('[data-order]').forEach(button => {
     const saved = await save(button, record.querySelector('[role=alert]')!, '/api/orders/verify', {
       method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ code, action }),
     });
-    if (saved) location.assign(`/admin?estado=${statusDestinations[action]}#order-list`);
+    if (saved) location.assign(`/admin/pedidos?estado=${statusDestinations[action]}#order-list`);
     else others.forEach(control => { control.disabled = false; });
   });
 });
@@ -45,11 +45,10 @@ document.querySelectorAll<HTMLFormElement>('[data-product-form], [data-stock]').
       body: JSON.stringify({ slug, stock: Number(data.get('stock')), active: data.has('active'),
         priceCents: Math.round(Number(data.get('price')) * 100), previousPriceCents: Number(previousPrice),
         previousStock: Number(previousStock), previousActive: previousActive === '1' }),
-    } : { method: 'POST', body: data };
+    } : { method: form.dataset.edit ? 'PUT' : 'POST', body: data };
     if (await save(button, message, '/api/admin/products', init)) {
       sessionStorage.setItem('fraganus:admin-feedback', slug ? 'Inventario actualizado.' : 'Perfume guardado.');
-      history.replaceState(null, '', '/admin#stock');
-      location.reload();
+      location.assign('/admin/catalogo#stock');
     }
   });
 });
@@ -67,10 +66,9 @@ document.querySelectorAll<HTMLFormElement>('[data-dispatch-form], [data-inspirat
     if (!saved) return;
     sessionStorage.setItem('fraganus:admin-feedback', dispatch ? 'Datos de envío guardados.' : 'Inspiración guardada.');
     if (dispatch && !['SHIPPED', 'ARCHIVE'].includes(new URLSearchParams(location.search).get('estado') ?? '')) {
-      location.assign('/admin?estado=SHIPPED#order-list');
+      location.assign('/admin/pedidos?estado=SHIPPED#order-list');
     } else {
-      if (!dispatch) history.replaceState(null, '', '/admin#stock');
-      location.reload();
+      if (!dispatch) location.assign('/admin/catalogo#stock');
     }
   });
 });
@@ -81,12 +79,9 @@ paymentQR?.addEventListener('submit', async event => {
   if (!paymentQR) return;
   const button = paymentQR.querySelector<HTMLButtonElement>('button[type=submit]')!;
   const error = paymentQR.querySelector<HTMLElement>('[role=alert]')!;
-  const message = paymentQR.querySelector<HTMLElement>('[role=status]')!;
-  message.textContent = '';
   if (await save(button, error, '/api/admin/payment-qr', { method: 'POST', body: new FormData(paymentQR) })) {
-    paymentQR.reset();
-    button.disabled = false;
-    message.textContent = 'QR guardado. Ya está visible en el paso de pago.';
+    sessionStorage.setItem('fraganus:admin-feedback', 'QR guardado. Ya está visible en el paso de pago.');
+    location.reload();
   }
 });
 

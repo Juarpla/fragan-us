@@ -19,7 +19,7 @@ export async function sendOrderNotification(env: StoreEnv, order: OrderNotificat
   const details = order.items.map(item => `${item.quantity} × ${item.name}`).join(', ');
   const caption = [
     `Nuevo pedido ${order.code}`, `${order.name} · +51 ${order.phone}`, `${order.city} · ${order.shipping}`,
-    `${money(order.total)} · ${order.payment}`, details, 'Pendiente de verificación. Revisa /admin.',
+    `${money(order.total)} · ${order.payment}`, details, 'Pendiente de confirmación. Revisa /admin.',
   ].join('\n').slice(0, 1000);
   const payload = new FormData();
   payload.set('chat_id', chat);

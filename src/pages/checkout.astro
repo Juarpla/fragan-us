@@ -2,6 +2,7 @@
 import { ArrowRight, Truck } from '@lucide/astro';
 import AgencyPicker from '../components/AgencyPicker.astro';
 import Base from '../layouts/Base.astro';
+import { documentFormats } from '../lib/checkout-document';
 import { checkoutMode } from '../lib/http';
 import { storeEnv } from '../lib/runtime';
 
@@ -28,6 +29,13 @@ Astro.response.headers.set('Cache-Control', 'no-store');
             <div class="fields">
               <label class="field">Nombre completo<input name="name" autocomplete="name" maxlength="90" minlength="2" required /></label>
               <label class="field">WhatsApp<input name="phone" type="tel" autocomplete="tel-national" inputmode="tel" maxlength="17" placeholder="987 654 321" required /></label>
+              <label class="field">Tipo de documento
+                <select name="documentType" required><option value="">Selecciona tu documento</option>{Object.entries(documentFormats).map(([value, format]) => <option value={value}>{format.label}</option>)}</select>
+              </label>
+              <label class="field">Número de documento
+                <input name="documentNumber" inputmode="numeric" autocomplete="off" maxlength="9" pattern="[0-9]{8,9}" aria-describedby="document-help" required />
+                <span id="document-help" class="muted">DNI de 8 dígitos o carné de 9.</span>
+              </label>
             </div>
           </section>
           <AgencyPicker />
@@ -35,7 +43,7 @@ Astro.response.headers.set('Cache-Control', 'no-store');
             <div class="checkout-preferences">
               <label class="checkout-consent">
                 <input type="checkbox" name="resume" />
-                <span>Acepto recibir mensajes y novedades por WhatsApp.</span>
+                <span>Acepto recibir mensajes y actualizaciones por WhatsApp.</span>
               </label>
               <a href="/privacidad">Política de privacidad</a>
             </div>

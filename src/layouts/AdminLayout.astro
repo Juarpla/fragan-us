@@ -1,0 +1,28 @@
+---
+import { Box, ClipboardList, QrCode, ShoppingBag } from '@lucide/astro';
+import Base from './Base.astro';
+
+interface Props { title: string; current: 'pedidos' | 'catalogo' | 'qr' | 'bolsas' }
+const { title, current } = Astro.props;
+const sections = [
+  { id: 'pedidos', label: 'Pedidos', Icon: ClipboardList },
+  { id: 'catalogo', label: 'Catálogo y stock', Icon: Box },
+  { id: 'qr', label: 'QR de pago', Icon: QrCode },
+  { id: 'bolsas', label: 'Bolsas pendientes', Icon: ShoppingBag },
+];
+---
+<Base title={`${title} · Administración`} minimal privatePage>
+  <section class="container inner-section admin-page">
+    <header class="admin-topbar">
+      <h1 class="admin-title">Administración</h1>
+      <nav class="admin-primary-nav" aria-label="Secciones de administración">
+        {sections.map(({ id, label, Icon }) => <a href={`/admin/${id}`} aria-current={current === id ? 'page' : undefined}><Icon size={17} aria-hidden="true" />{label}</a>)}
+      </nav>
+    </header>
+    <p class="admin-feedback" role="status" data-admin-feedback></p>
+    <slot />
+  </section>
+</Base>
+<script>
+  import '../scripts/admin-ui';
+</script>

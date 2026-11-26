@@ -23,12 +23,20 @@ const message: Record<string, string> = {
   PENDING_CONFIRMATION: 'Estamos revisando tu solicitud. Consulta este enlace para saber cuándo podrás pagar.',
   AWAITING_PAYMENT: 'Paga los perfumes por Yape o Plin y adjunta el comprobante.',
   EXPIRED: 'La reserva venció. Si ya pagaste, todavía puedes enviar tu comprobante para que lo revisemos.',
-  PENDING_VERIFICATION: 'Verificaremos el pago antes de confirmar tu pedido.',
-  PAID: 'Verificamos tu pago y estamos preparando el pedido.',
-  PACKING: 'Verificamos tu pago y estamos preparando el pedido para enviarlo a la agencia que elegiste.',
+  PENDING_VERIFICATION: 'Confirmaremos tu pedido al comprobar el pago.',
+  PAID: 'Confirmamos tu pago y estamos preparando el pedido.',
+  PACKING: 'Confirmamos tu pago y estamos preparando el pedido para enviarlo a la agencia que elegiste.',
   SHIPPED: 'Tu pedido ya fue enviado a la agencia de destino.',
   CANCELLED: 'El pedido fue cancelado.',
 };
+const items = order ? orderItems(order.items_json) : [];
+const legacySlugs = [...new Set(items.filter(item => !item.volume).map(item => item.slug))];
+const legacyVolumes = new Map<string, number>();
+if (db && legacySlugs.length) {
+  const existing = await db.prepare(`SELECT slug, volume FROM products WHERE slug IN (${legacySlugs.map(() => '?').join(',')})`)
+    .bind(...legacySlugs).all<{ slug: string; volume: number }>();
+  for (const product of existing.results) legacyVolumes.set(product.slug, product.volume);
+}
 const mode = checkoutMode(storeEnv);
 const payable = order && isPayable(order, mode);
 const submitReceipt = order && canSubmitReceipt(order, mode);
@@ -49,7 +57,10 @@ const supportHref = !supportPhone || !/^51[0-9]{9}$/.test(supportPhone) ? undefi
         {order.status !== 'CANCELLED' && <OrderTimeline order={order} />}
         <details class="order-items">
           <summary>Detalle del pedido</summary>
-          <ul>{orderItems(order.items_json).map(item => <li><span>{item.quantity} × {item.name}</span><strong>{money(item.price_cents * item.quantity)}</strong></li>)}</ul>
+          <ul>{items.map(item => {
+            const volume = item.volume ?? legacyVolumes.get(item.slug);
+            return <li><div><span>{item.quantity} × {item.name}</span><p class="muted">{[item.brand, volume && `${volume} ml`].filter(Boolean).join(' · ')}</p></div><strong>{money(item.price_cents * item.quantity)}</strong></li>;
+          })}</ul>
         </details>
         <p class="order-freight"><span>Total</span><strong>{money(order.total_cents)}</strong></p>
         {order.status === 'SHIPPED' && (order.shipping_receipt_key || order.pickup_password) && (
@@ -57,9 +68,14 @@ const supportHref = !supportPhone || !/^51[0-9]{9}$/.test(supportPhone) ? undefi
             <h2 id="order-dispatch-title">Recojo en agencia</h2>
             <div class="order-dispatch-actions">
               {order.shipping_receipt_key && <a class="button secondary" href={`/api/orders/shipping-receipt?code=${order.order_code}`} download><Download size={17} aria-hidden="true" /> Descargar comprobante de envío</a>}
-              {order.pickup_password && <details class="pickup-disclosure">
+              {order.pickup_password && <details class="pickup-disclosure" data-copy-region>
                 <summary><KeyRound size={17} aria-hidden="true" /> <span>Clave de recojo</span></summary>
-                <code>{order.pickup_password}</code>
+                <div class="pickup-value">
+                  <code>{order.pickup_password}</code>
+                  <button type="button" class="icon-button" data-copy-value={order.pickup_password} data-copy-success="Clave copiada." aria-label="Copiar clave de recojo"><Copy size={17} aria-hidden="true" /></button>
+                </div>
+                <p class="muted pickup-status" role="status" data-copy-message></p>
+                <input aria-label="Clave para copiar" readonly data-copy-fallback hidden />
               </details>}
             </div>
           </section>
@@ -85,6 +101,7 @@ const supportHref = !supportPhone || !/^51[0-9]{9}$/.test(supportPhone) ? undefi
 </Base>
 
 <script>
+  import '../../scripts/clipboard-value';
   import { showTemporaryStatus } from '../../scripts/temporary-status';
 
   const share = document.querySelector('[data-order-share]');

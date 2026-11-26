@@ -25,7 +25,7 @@ export async function getCatalog(env?: StoreEnv): Promise<Product[]> {
 }
 
 export type CartItem = { slug: string; quantity: number };
-export type OrderItem = CartItem & { name: string; brand: string; price_cents: number; image_url: string };
+export type OrderItem = CartItem & { name: string; brand: string; price_cents: number; image_url: string; volume?: number };
 
 export function parseCart(raw: unknown): CartItem[] {
   if (!Array.isArray(raw) || raw.length === 0 || raw.length > 20) throw new Error('Revisa los productos de tu bolsa.');
@@ -43,13 +43,13 @@ export function parseCart(raw: unknown): CartItem[] {
 export async function priceCart(db: D1Database, cart: CartItem[]) {
   await expireReservations(db);
   const placeholders = cart.map(() => '?').join(', ');
-  const { results } = await db.prepare(`SELECT slug, name, brand, price_cents, stock, image_url FROM products WHERE active = 1 AND slug IN (${placeholders})`)
-    .bind(...cart.map(item => item.slug)).all<Pick<Product, 'slug' | 'name' | 'brand' | 'price_cents' | 'stock' | 'image_url'>>();
+  const { results } = await db.prepare(`SELECT slug, name, brand, price_cents, stock, image_url, volume FROM products WHERE active = 1 AND slug IN (${placeholders})`)
+    .bind(...cart.map(item => item.slug)).all<Pick<Product, 'slug' | 'name' | 'brand' | 'price_cents' | 'stock' | 'image_url' | 'volume'>>();
   const products = new Map(results.map(product => [product.slug, product]));
   const items: OrderItem[] = cart.map(({ slug, quantity }) => {
     const product = products.get(slug);
     if (!product || product.stock < quantity) throw new Error(`Stock insuficiente para ${product?.name ?? slug}. Actualiza tu bolsa.`);
-    return { slug, quantity, name: product.name, brand: product.brand, price_cents: product.price_cents, image_url: product.image_url };
+    return { slug, quantity, name: product.name, brand: product.brand, price_cents: product.price_cents, image_url: product.image_url, volume: product.volume };
   });
   return { items, total: items.reduce((sum, item) => sum + item.price_cents * item.quantity, 0) };
 }

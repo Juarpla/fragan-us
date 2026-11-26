@@ -1,6 +1,6 @@
 import type { APIRoute } from 'astro';
 import { guardAdmin, isSameOrigin, json, validCode } from '../../../lib/http';
-import { expireReservations } from '../../../lib/orders';
+import { expireReservations, reservationMinutes } from '../../../lib/orders';
 import { storeEnv } from '../../../lib/runtime';
 
 const transitions = {
@@ -26,8 +26,9 @@ export const POST: APIRoute = async ({ request }) => {
   try {
     await expireReservations(db);
     const result = await db.prepare(`UPDATE orders SET status = ?,
-        stock_reserved = CASE WHEN ? = 'enable_payment' THEN 1 WHEN ? IN ('cancel', 'pay') THEN 0 ELSE stock_reserved END
-      WHERE order_code = ? AND status IN (${from.map(() => '?').join(', ')})`).bind(to, action, action, code, ...from).run();
+        stock_reserved = CASE WHEN ? = 'enable_payment' THEN 1 WHEN ? IN ('cancel', 'pay') THEN 0 ELSE stock_reserved END,
+        reserved_until = CASE WHEN ? = 'enable_payment' THEN datetime('now', ?) ELSE reserved_until END
+      WHERE order_code = ? AND status IN (${from.map(() => '?').join(', ')})`).bind(to, action, action, action, `+${reservationMinutes} minutes`, code, ...from).run();
     if (result.meta.changes) return json({ ok: true });
     const row = await db.prepare('SELECT status FROM orders WHERE order_code = ?').bind(code).first<{ status: string }>();
     if (!row) return json({ error: 'No se encontró el pedido.' }, 404);

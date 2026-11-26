@@ -1,0 +1,29 @@
+---
+import AdminLayout from '../../layouts/AdminLayout.astro';
+import { guardAdmin } from '../../lib/http';
+import { storeEnv } from '../../lib/runtime';
+
+const denied = await guardAdmin(Astro.request, storeEnv);
+if (denied) return denied;
+Astro.response.headers.set('Cache-Control', 'private, no-store');
+Astro.response.headers.set('Referrer-Policy', 'no-referrer');
+
+const currentQR = await storeEnv.RECEIPTS_BUCKET?.head('settings/payment-qr').catch(() => null);
+---
+<AdminLayout title="QR de pago" current="qr">
+  <section class="panel admin-section admin-qr-panel" aria-labelledby="payment-settings">
+    <div>
+      <h2 id="payment-settings">QR de pago</h2>
+      {currentQR ? <figure class="admin-qr-preview">
+        <img src={`/api/admin/payment-qr?v=${currentQR.etag}`} alt="Código QR actual de pago" width="240" height="240" />
+        <figcaption>QR visible en el paso de pago</figcaption>
+      </figure> : <p class="muted">Aún no hay un QR de pago configurado.</p>}
+    </div>
+    <form class="admin-payment-form" data-payment-qr-form enctype="multipart/form-data">
+      <h3>{currentQR ? 'Reemplazar QR' : 'Subir QR'}</h3>
+      <label class="field">Imagen del QR<input name="photo" type="file" accept="image/jpeg,image/png,image/webp" required /><span class="muted">JPG, PNG o WebP. Hasta 8 MB.</span></label>
+      <button class="button primary" type="submit">Guardar QR</button>
+      <p class="error-message" role="alert"></p>
+    </form>
+  </section>
+</AdminLayout>

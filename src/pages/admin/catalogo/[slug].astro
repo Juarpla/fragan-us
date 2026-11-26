@@ -1,0 +1,37 @@
+---
+import { ArrowLeft, Box, Plus } from '@lucide/astro';
+import AdminProductForm from '../../../components/AdminProductForm.astro';
+import AdminLayout from '../../../layouts/AdminLayout.astro';
+import type { Product } from '../../../lib/catalog';
+import { guardAdmin } from '../../../lib/http';
+import { expireReservations } from '../../../lib/orders';
+import { storeEnv } from '../../../lib/runtime';
+
+const denied = await guardAdmin(Astro.request, storeEnv);
+if (denied) return denied;
+Astro.response.headers.set('Cache-Control', 'private, no-store');
+Astro.response.headers.set('Referrer-Policy', 'no-referrer');
+
+const db = storeEnv.DB;
+if (!db) return new Response('Base de datos no disponible.', { status: 503 });
+await expireReservations(db);
+const record = await db.prepare('SELECT * FROM products WHERE slug = ?').bind(Astro.params.slug ?? '')
+  .first<Omit<Product, 'climate' | 'occasions' | 'notes'> & { climate: string; occasions: string; notes: string; active: number; edit_version: number }>();
+const product = record && {
+  ...record, climate: JSON.parse(record.climate), occasions: JSON.parse(record.occasions), notes: JSON.parse(record.notes),
+};
+if (!product) Astro.response.status = 404;
+---
+<AdminLayout title="Editar perfume" current="catalogo">
+  <div class="admin-layout">
+    <nav class="admin-section-nav" aria-label="Acciones del catálogo">
+      <a href="/admin/catalogo#stock"><Box size={18} aria-hidden="true" /> Inventario</a>
+      <a href="/admin/catalogo#create-product"><Plus size={18} aria-hidden="true" /> Agregar perfume</a>
+    </nav>
+    <section class="panel admin-section" aria-labelledby="product-editor-title">
+      <a class="inline-link admin-back-link" href="/admin/catalogo#stock"><ArrowLeft size={16} aria-hidden="true" /> Volver al catálogo</a>
+      <h2 id="product-editor-title">{product ? `Editar ${product.name}` : 'No se encontró el perfume'}</h2>
+      {product && <AdminProductForm product={product} />}
+    </section>
+  </div>
+</AdminLayout>

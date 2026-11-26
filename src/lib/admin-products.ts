@@ -1,16 +1,16 @@
 import { climateLabel, occasionLabel } from './catalog';
 
 export const audiences = ['Para él', 'Para ella', 'Unisex'];
-export const tones = { sand: 'Arena', rose: 'Rosa', lilac: 'Lila', sage: 'Verde salvia' };
+export const tones = { sand: 'Arena', rose: 'Rosa', lilac: 'Lila', sage: 'Verde salvia', peach: 'Durazno', ice: 'Azul hielo' };
 
-export function parseProduct(form: FormData) {
+export function parseProduct(form: FormData, existingSlug?: string) {
   const field = (name: string) => {
     const value = form.get(name);
     return typeof value === 'string' ? value.trim() : '';
   };
   const name = field('name');
   const brand = field('brand');
-  const slug = `${name}-${brand}`.normalize('NFD').replace(/\p{M}/gu, '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+  const slug = existingSlug ?? `${name}-${brand}`.normalize('NFD').replace(/\p{M}/gu, '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
   const price = field('price');
   const priceCents = /^\d{1,3}(?:[.,]\d{1,2})?$/.test(price) ? Math.round(Number(price.replace(',', '.')) * 100) : 0;
   const stock = Number(field('stock'));

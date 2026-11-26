@@ -1,3 +1,4 @@
+import { documentFormat, validDocument } from '../lib/checkout-document';
 import { setupAgencyPicker } from './agency-picker';
 import { money } from '../lib/catalog';
 import type { OrderItem } from '../lib/db';
@@ -23,6 +24,22 @@ let submitting = false;
 let captureQueue = Promise.resolve();
 const paymentEnabled = root.dataset.mode !== 'unavailable';
 const picker = setupAgencyPicker(form, submit, paymentEnabled);
+const documentType = form.querySelector('select[name=documentType]') as unknown as HTMLSelectElement;
+const documentNumber = form.elements.namedItem('documentNumber') as HTMLInputElement;
+const documentHelp = form.querySelector<HTMLElement>('#document-help')!;
+
+function updateDocumentFormat() {
+  const format = documentFormat(documentType.value);
+  documentNumber.maxLength = format?.digits ?? 9;
+  documentNumber.pattern = format ? `[0-9]{${format.digits}}` : '[0-9]{8,9}';
+  documentNumber.placeholder = format ? `${format.digits} dígitos` : '';
+  documentHelp.textContent = format ? `Ingresa los ${format.digits} dígitos de tu documento.` : 'DNI de 8 dígitos o carné de 9.';
+  documentNumber.setCustomValidity('');
+}
+documentType.addEventListener('change', updateDocumentFormat);
+documentNumber.addEventListener('input', () => documentNumber.setCustomValidity(''));
+window.addEventListener('pageshow', updateDocumentFormat);
+updateDocumentFormat();
 
 function render(items: OrderItem[], value: number) {
   total = value;
@@ -76,11 +93,15 @@ form.addEventListener('submit', async event => {
   if (submitting || !paymentEnabled || submit.disabled) return;
   const digits = phoneDigits();
   phone.setCustomValidity(/^9\d{8}$/.test(digits) ? '' : 'Ingresa un celular peruano de 9 dígitos.');
+  if (!validDocument(documentType.value, documentNumber.value)) {
+    documentNumber.setCustomValidity(documentHelp.textContent ?? 'Revisa el número de documento.');
+  }
   if (!form.reportValidity()) return;
 
   const data = new FormData(form);
   const payload = {
-    name: data.get('name'), phone: digits, ubigeo: data.get('ubigeo'), agencyId: Number(data.get('agency')), whatsappOffers: resume.checked,
+    name: data.get('name'), phone: digits, documentType: data.get('documentType'),
+    documentNumber: data.get('documentNumber'), ubigeo: data.get('ubigeo'), agencyId: Number(data.get('agency')), whatsappOffers: resume.checked,
     cart: compactCart(readCart()), checkoutId: checkoutId(), sessionId: sessionId(), expectedTotal: total,
   };
   submitting = true;

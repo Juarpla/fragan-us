@@ -1,4 +1,6 @@
 import type { APIRoute } from 'astro';
+import { validDocument } from '../../../lib/checkout-document';
+import { reservationMinutes } from '../../../lib/orders';
 import { parseCart, priceCart } from '../../../lib/db';
 import { checkoutMode, isSameOrigin, json, validId } from '../../../lib/http';
 import { storeEnv } from '../../../lib/runtime';
@@ -22,6 +24,8 @@ export const POST: APIRoute = async ({ request }) => {
   const field = (key: string) => typeof body[key] === 'string' ? body[key].trim() : '';
   const name = field('name');
   const phone = field('phone');
+  const documentType = field('documentType');
+  const documentNumber = field('documentNumber');
   const requestedDistrict = districtsByCode.get(field('ubigeo'));
   if (name.length < 2 || name.length > 90 || !/^9\d{8}$/.test(phone) || !requestedDistrict ||
       typeof agencyId !== 'number' || !Number.isSafeInteger(agencyId) || agencyId <= 0) {
@@ -31,6 +35,9 @@ export const POST: APIRoute = async ({ request }) => {
   try {
     const existing = await findExisting();
     if (existing) return json({ code: existing.order_code });
+    if (!validDocument(documentType, documentNumber)) {
+      return json({ error: 'Ingresa un DNI de 8 dígitos o un carné de extranjería de 9 dígitos.' }, 400);
+    }
 
     const { agencies } = await getAgencyDirectory(env);
     const agency = agencies.find(item => item.id === agencyId);
@@ -46,11 +53,11 @@ export const POST: APIRoute = async ({ request }) => {
     const address = `${agency.name} · ${agency.address} · ${agencyDistrict.slice(1, 4).join(' / ')}`;
     await db.batch([
       db.prepare(`INSERT INTO orders (
-          order_code, checkout_id, customer_name, customer_phone, city, shipping_address, shipping_method,
+          order_code, checkout_id, customer_name, customer_phone, document_type, document_number, city, shipping_address, shipping_method,
           agency_id, destination_ubigeo, whatsapp_offers, items_json, total_cents, is_demo, status, stock_reserved, reserved_until
-        ) VALUES (?, ?, ?, ?, ?, ?, 'SHALOM', ?, ?, ?, ?, ?, ?, 'AWAITING_PAYMENT', 1, datetime('now', '+30 minutes'))`)
-        .bind(code, checkoutId, name, phone, city, address, agency.id, requestedDistrict[0], body.whatsappOffers === true ? 1 : 0,
-          JSON.stringify(priced.items), priced.total, isDemo),
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'SHALOM', ?, ?, ?, ?, ?, ?, 'AWAITING_PAYMENT', 1, datetime('now', ?))`)
+        .bind(code, checkoutId, name, phone, documentType, documentNumber, city, address, agency.id, requestedDistrict[0], body.whatsappOffers === true ? 1 : 0,
+          JSON.stringify(priced.items), priced.total, isDemo, `+${reservationMinutes} minutes`),
       db.prepare(`UPDATE abandoned_carts SET status = 'CONVERTED', updated_at = CURRENT_TIMESTAMP
         WHERE session_id = ? AND status = 'ABANDONED'`).bind(sessionId),
     ]);

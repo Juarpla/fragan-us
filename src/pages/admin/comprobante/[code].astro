@@ -1,0 +1,71 @@
+---
+import { ArrowLeft, Download, Image as ImageIcon, Link2, MessageCircle } from '@lucide/astro';
+import AdminLayout from '../../../layouts/AdminLayout.astro';
+import { guardAdmin, validCode } from '../../../lib/http';
+import { orderWhatsApp } from '../../../lib/admin-orders';
+import type { OrderRow } from '../../../lib/orders';
+import { storeEnv } from '../../../lib/runtime';
+
+const denied = await guardAdmin(Astro.request, storeEnv);
+if (denied) return denied;
+Astro.response.headers.set('Cache-Control', 'private, no-store');
+Astro.response.headers.set('Referrer-Policy', 'no-referrer');
+
+const { code } = Astro.params;
+const order = validCode(code) && await storeEnv.DB?.prepare("SELECT * FROM orders WHERE order_code = ? AND status = 'SHIPPED' AND shipping_receipt_key IS NOT NULL")
+  .bind(code).first<OrderRow>();
+if (!order) Astro.response.status = 404;
+const preview = `/api/admin/dispatch-file?code=${code}`;
+const download = `/api/orders/shipping-receipt?code=${code}`;
+const whatsapp = order && orderWhatsApp(order, Astro.url.origin);
+---
+<AdminLayout title="Comprobante de envío" current="pedidos">
+  <section class="panel admin-section" data-copy-region>
+    <a class="inline-link admin-back-link" href="/admin/pedidos?estado=SHIPPED"><ArrowLeft size={16} aria-hidden="true" /> Volver a enviados</a>
+    <h2>{order ? 'Comprobante de envío' : 'Comprobante no disponible'}</h2>
+    {order && <>
+      <p class="muted">{order.order_code}</p>
+      <div class="admin-proof">
+        {order.shipping_receipt_key?.endsWith('.pdf')
+          ? <iframe src={preview} title="Vista previa del comprobante de envío en PDF"></iframe>
+          : <img src={preview} alt="Comprobante del transportista" data-proof-image />}
+      </div>
+      <div class="checkout-actions">
+        <a class="button primary" href={download} download><Download size={17} aria-hidden="true" /> Descargar comprobante</a>
+        <button class="button secondary" type="button" data-copy-value={new URL(download, Astro.url.origin).href} data-copy-success="Enlace copiado."><Link2 size={17} aria-hidden="true" /> Copiar enlace</button>
+        <button class="button secondary" type="button" data-copy-proof hidden><ImageIcon size={17} aria-hidden="true" /> Copiar imagen</button>
+        {order.is_demo !== 1 && whatsapp && <a class="button whatsapp-support" href={whatsapp.href} target="_blank" rel="noreferrer"><MessageCircle size={17} aria-hidden="true" /> Avisar del envío</a>}
+      </div>
+      <p class="muted admin-copy-status" role="status" data-copy-message></p>
+      <input class="admin-copy-fallback" aria-label="Enlace del comprobante" data-copy-fallback readonly hidden />
+    </>}
+  </section>
+</AdminLayout>
+<script>
+  import '../../../scripts/clipboard-value';
+  import { showTemporaryStatus } from '../../../scripts/temporary-status';
+
+  const proof = document.querySelector<HTMLImageElement>('[data-proof-image]');
+  const copy = document.querySelector<HTMLButtonElement>('[data-copy-proof]');
+  const status = document.querySelector<HTMLElement>('[data-copy-message]');
+  if (proof && copy && status && navigator.clipboard?.write && typeof ClipboardItem !== 'undefined') {
+    copy.hidden = false;
+    copy.addEventListener('click', async () => {
+      const png = (async () => {
+        await proof.decode();
+        const canvas = document.createElement('canvas');
+        const scale = Math.min(1, 2048 / Math.max(proof.naturalWidth, proof.naturalHeight));
+        canvas.width = Math.max(1, Math.round(proof.naturalWidth * scale));
+        canvas.height = Math.max(1, Math.round(proof.naturalHeight * scale));
+        canvas.getContext('2d')?.drawImage(proof, 0, 0, canvas.width, canvas.height);
+        return new Promise<Blob>((resolve, reject) => canvas.toBlob(blob => blob ? resolve(blob) : reject(new Error()), 'image/png'));
+      })();
+      try {
+        await navigator.clipboard.write([new ClipboardItem({ 'image/png': png })]);
+        showTemporaryStatus(status, 'Imagen copiada.');
+      } catch {
+        showTemporaryStatus(status, 'No pudimos copiar la imagen. Puedes descargarla.');
+      }
+    });
+  }
+</script>

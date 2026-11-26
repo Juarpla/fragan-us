@@ -1,5 +1,5 @@
 ---
-import { LocateFixed, MapPin } from '@lucide/astro';
+import { MapPin } from '@lucide/astro';
 ---
 <section class="checkout-group agency-picker" data-agency-picker aria-labelledby="agency-heading">
   <div class="agency-heading">
@@ -10,10 +10,6 @@ import { LocateFixed, MapPin } from '@lucide/astro';
     <div class="field"><label for="agency-department">Departamento</label><select id="agency-department" name="department" required disabled></select></div>
     <div class="field"><label for="agency-province">Provincia</label><select id="agency-province" name="province" required disabled></select></div>
     <div class="field"><label for="agency-district">Distrito</label><select id="agency-district" name="ubigeo" required disabled></select></div>
-  </div>
-  <div class="agency-location" data-location-panel hidden>
-    <button class="button secondary" type="button" data-use-location aria-describedby="agency-location-help"><LocateFixed size={17} aria-hidden="true" /> Usar mi ubicación</button>
-    <p id="agency-location-help">Opcional. Solo se usa para ordenar las agencias por cercanía.</p>
   </div>
   <p class="agency-status" data-agency-status role="status">Cargando el listado de agencias…</p>
   <button class="button secondary" type="button" data-reload-agencies hidden>Reintentar carga</button>

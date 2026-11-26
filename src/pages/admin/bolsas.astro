@@ -1,0 +1,27 @@
+---
+import AdminLayout from '../../layouts/AdminLayout.astro';
+import { guardAdmin } from '../../lib/http';
+import { storeEnv } from '../../lib/runtime';
+import { ArrowUpRight } from '@lucide/astro';
+import { money } from '../../lib/catalog';
+import { adminDate } from '../../lib/admin-orders';
+import { orderItems, type CartRow } from '../../lib/orders';
+const denied = await guardAdmin(Astro.request, storeEnv);
+if (denied) return denied;
+Astro.response.headers.set('Cache-Control', 'private, no-store');
+Astro.response.headers.set('Referrer-Policy', 'no-referrer');
+
+const db = storeEnv.DB;
+if (!db) return new Response('Base de datos no disponible.', { status: 503 });
+const { results: carts } = await db.prepare("SELECT * FROM abandoned_carts WHERE status = 'ABANDONED' ORDER BY updated_at DESC LIMIT 30").all<CartRow>();
+const wa = (phone: string) => `https://wa.me/51${phone}`;
+---
+<AdminLayout title="Bolsas pendientes" current="bolsas">
+  <section class="panel admin-section" aria-labelledby="cart-list">
+    <h2 id="cart-list">Bolsas pendientes</h2>
+        {carts.length ? carts.map(cart => <article class="admin-record">
+          <div><strong>{cart.customer_name || 'Cliente'} · {money(cart.total_cents)}</strong><p>+51 {cart.customer_phone}</p><p>{orderItems(cart.items_json).map(item => `${item.quantity} × ${item.name}`).join(', ')}</p><p class="muted">{adminDate(cart.updated_at)}</p></div>
+          {storeEnv.DEMO_MODE !== 'true' && <a class="inline-link" href={wa(cart.customer_phone)} rel="noreferrer" target="_blank">Contactar por WhatsApp <ArrowUpRight size={15} /></a>}
+        </article>) : <p class="muted">No hay bolsas pendientes con autorización de contacto.</p>}
+  </section>
+</AdminLayout>
