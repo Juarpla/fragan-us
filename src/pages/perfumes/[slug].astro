@@ -14,7 +14,8 @@ const backToCatalog = catalogHref(filters, query, page);
 const products = await getCatalog(storeEnv);
 const product = products.find(item => item.slug === Astro.params.slug);
 if (!product) Astro.response.status = 404;
-const reviewsHref = product && `https://www.tiktok.com/search?${new URLSearchParams({ q: `reseña ${product.brand} ${product.name}` })}`;
+const reviewsQuery = product && `reseña ${product.brand} ${product.name}`;
+const reviewsHref = reviewsQuery && `https://www.tiktok.com/search?${new URLSearchParams({ q: reviewsQuery })}`;
 const notes = product ? [
   { label: 'Salida', Icon: SprayCan, notes: product.notes.opening, tone: 'sand' },
   { label: 'Corazón', Icon: Heart, notes: product.notes.heart, tone: 'rose' },
@@ -37,8 +38,9 @@ const related = products.filter(item => item.slug !== product?.slug).slice(0, 4)
         <p class="detail-stock">{product.stock > 0 ? `${product.stock} ${product.stock === 1 ? 'unidad disponible' : 'unidades disponibles'}` : 'Agotado'}</p>
         <div class="detail-actions">
           <button class="button primary" type="button" data-add={JSON.stringify(product)} disabled={!product.stock}><ShoppingBag size={18} aria-hidden="true" /> Agregar a la bolsa</button>
-          <a class="button secondary" href={reviewsHref} target="_blank" rel="noopener noreferrer"><TikTok size={17} /> Ver reseñas en TikTok <ExternalLink size={14} aria-hidden="true" /></a>
+          <a class="button secondary" href={reviewsHref} target="_blank" rel="noopener noreferrer" data-tiktok-search={reviewsQuery}><TikTok size={17} /> Ver reseñas en TikTok <ExternalLink size={14} aria-hidden="true" /></a>
         </div>
+        <a class="reviews-web" href={reviewsHref} target="_blank" rel="noopener noreferrer" hidden>Abrir búsqueda en el navegador</a>
         <div class="detail-tags">{[...product.climate, ...product.occasions].map(key => {
           const label = climateLabel[key] ?? occasionLabel[key];
           return label && <a href={catalogHref([key])}>{label}</a>;
@@ -59,3 +61,37 @@ const related = products.filter(item => item.slug !== product?.slug).slice(0, 4)
   </div> : <section class="container inner-section"><h1 class="inner-title">Perfume no encontrado</h1><a class="button primary" href={backToCatalog}>Explorar perfumes <ArrowRight size={18} /></a></section>}
   {product && related.length > 0 && <section class="container detail-section"><div class="section-heading"><h2>También te puede gustar</h2></div><div class="product-grid">{related.map(item => <ProductCard product={item} catalogQuery={catalogParams(filters, query, page)} />)}</div></section>}
 </Base>
+
+<script>
+  const appLink = document.querySelector<HTMLAnchorElement>('[data-tiktok-search]');
+  const webLink = document.querySelector<HTMLAnchorElement>('.reviews-web');
+  const query = appLink?.dataset.tiktokSearch;
+  const { userAgent, maxTouchPoints } = navigator;
+  const isAndroid = /Android/i.test(userAgent);
+  const isAppleMobile = /iPhone|iPad|iPod/i.test(userAgent)
+    || (/Macintosh/i.test(userAgent) && maxTouchPoints > 1);
+
+  if (appLink && webLink && query && (isAndroid || isAppleMobile)) {
+    const searchRoute = `search?keyword=${encodeURIComponent(query)}`;
+    appLink.href = isAndroid
+      ? `intent://${searchRoute}#Intent;scheme=snssdk1233;package=com.zhiliaoapp.musically;S.browser_fallback_url=${encodeURIComponent(webLink.href)};end`
+      : `snssdk1233://${searchRoute}`;
+    appLink.removeAttribute('target');
+    webLink.hidden = false;
+  }
+</script>
+
+<style>
+  .reviews-web {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+    color: var(--purple-deep);
+    font-size: .8rem;
+    font-weight: 650;
+    text-decoration: underline;
+    text-underline-offset: .2em;
+  }
+
+  .reviews-web:not([hidden]) + .detail-tags { margin-top: 8px; }
+</style>

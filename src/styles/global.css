@@ -588,7 +588,6 @@ input[type=checkbox], input[type=radio] { accent-color: var(--purple); }
 .has-inspiration[data-inspiration=reference] .fragrance-front { transform: rotateY(180deg); }
 .has-inspiration[data-inspiration=reference] .fragrance-reference { transform: rotateY(0); }
 .fragrance-reference > img, .detail-visual .fragrance-reference > img { display: block; width: min(58%, 200px); height: 62%; min-height: 0; object-fit: contain; filter: drop-shadow(5px 9px 9px #38264238); }
-.fragrance-reference p { color: #573c68; font-size: .72rem; font-weight: 650; }
 .fragrance-reference strong { display: block; font: 650 clamp(.92rem, 1.25vw, 1.24rem)/1.16 var(--serif); overflow-wrap: anywhere; }
 .detail-visual .fragrance-reference strong { font-size: clamp(1.2rem, 2.8vw, 2.1rem); }
 .fragrance-switch {

@@ -18,8 +18,8 @@ const photoAlt = image_url === productPhotoPlaceholder ? 'Foto pendiente' : `Fra
   </div>
   {inspiration_name && <>
     <div class="fragrance-reference" data-inspiration-back inert aria-hidden="true">
+      <strong>{inspiration_name}</strong>
       {inspiration_image_url && <img src={inspiration_image_url} alt="" width="360" height="360" loading="lazy" />}
-      <div><p>Referencia olfativa</p><strong>{inspiration_name}</strong></div>
     </div>
     <button type="button" class="fragrance-switch" data-inspiration-toggle>
       <span class="fragrance-switch-label">
