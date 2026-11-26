@@ -2,6 +2,7 @@
 import { ArrowDown, ArrowRight, CreditCard, MapPin, Sparkles, Truck } from '@lucide/astro';
 import Base from '../layouts/Base.astro';
 import ProductCard from '../components/ProductCard.astro';
+import HomeHeroPhotos from '../components/HomeHeroPhotos.astro';
 import HomeSupport from '../components/HomeSupport.astro';
 import { catalogHref, catalogSelection } from '../lib/catalog-filters';
 import { getCatalog } from '../lib/db';
@@ -36,9 +37,7 @@ const featured = [...curated, ...products.filter(product => !highlights.has(prod
         <a class="button secondary" href="/perfumes#climas">Elegir por clima <ArrowDown size={17} aria-hidden="true" /></a>
       </div>
     </div>
-    <div class="hero-photo">
-      <img src="/brand/hero-perfumes.webp" alt="Tres perfumes sobre piedra malva: Odyssey Mandarin Sky de Armaf, Khamrah de Lattafa y Hawas for Him de Rasasi." width="1448" height="1086" fetchpriority="high" />
-    </div>
+    <HomeHeroPhotos />
   </section>
 
   <div class="container assurances" aria-label="Información de compra">

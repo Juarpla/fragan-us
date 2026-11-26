@@ -41,3 +41,13 @@ La selección usa los códigos de distrito del INEI. La ubicación del comprador
 ## Imágenes de la demostración
 
 La portada utiliza las referencias de [Odyssey Mandarin Sky](https://promart.vteximg.com.br/arquivos/ids/11128441-1000-1000/image-0.jpg?v=639198402728170000), [Khamrah](https://p16-oec-general-useast5.ttcdn-us.com/tos-useast5-i-omjb5zjo8w-tx/12bf49e93d2d48719c30c4aab0b51a43~tplv-fhlh96nyum-crop-webp:400:400.webp?dr=12190&t=555f072d&ps=933b5bde&shp=57fff0e0&shcp=0d52deaf&idc=useast8&from=1476391136) y [Hawas for Him](https://media.falabella.com/falabellaPE/135506601_01/w=1500,h=1500,fit=cover) proporcionadas para FraganUS. Las fotos de referencia de los productos proceden de [Zamoori](https://zamoori.co.uk/collections/lattafa-perfumes), [Arabic Perfumes](https://arabicperfumes.com/fr/femmes/lattafa-yara), [Fragrance Outlet](https://www.fragranceoutlet.com/) y [BeautyHouse](https://beautyhouse.com/products/lattafa-qaed-al-fursan-eau-de-parfum-for-everyone). Las notas siguen las fichas de Lattafa. [Khamrah](https://lattafa.com/product/khamrah/), [Yara](https://lattafa.com/product/yara/), [Asad](https://lattafa.com/product/asad/), [Qaed Al Fursan](https://lattafa.com/product/qaed-al-fursan/)
+
+### Telegram y fichas de perfumes
+
+El Worker envía una alerta de Telegram cuando guarda una nueva orden real, con el medio de pago disponible en ese momento («Yape o Plin») y un enlace directo al pedido en Administración. La alerta se envía en segundo plano. Configura `TELEGRAM_BOT_TOKEN` y `TELEGRAM_CHAT_ID` como secretos de Cloudflare. El chat debe ser privado y el bot debe tener permiso para escribir.
+
+En Catálogo y stock, el alta requiere nombre, marca y precio. Dejar el stock vacío asigna 2 unidades, y escribir 0 guarda el perfume agotado. Puedes guardar los detalles y la fotografía cuando tengas los datos.
+
+El workflow **Completar fichas de perfumes** corre cada seis horas. También se puede ejecutar desde Actions con vista previa activada para revisar los campos encontrados sin modificar el catálogo. La automatización compara nombre, marca y los datos de la versión con las fichas oficiales de Lattafa, Armaf, Rasasi y Afnan. Solo completa campos vacíos con una coincidencia única y deja pendientes los datos que no puede verificar. Las recomendaciones de clima y ocasión se derivan de la familia olfativa.
+
+Para habilitar el workflow, registra la misma clave aleatoria de al menos 32 caracteres como secreto `CATALOG_ENRICHMENT_TOKEN` tanto en GitHub Actions como en el Worker. La clave tiene acceso únicamente a consultar y completar fichas incompletas.

@@ -59,3 +59,10 @@ export const sampleCatalog: Product[] = [
 export const money = (cents: number) => `S/ ${(cents / 100).toFixed(2)}`;
 export const climateLabel: Record<string, string> = { calido: 'Clima cálido', fresco: 'Clima fresco' };
 export const occasionLabel: Record<string, string> = { diario: 'Día a día', noche: 'Noche y eventos' };
+
+export const productPhotoPlaceholder = '/brand/perfume-sin-foto.svg';
+
+export function productSpecs(product: Pick<Product, 'concentration' | 'volume' | 'family'>) {
+  const format = [product.concentration, product.volume > 0 ? `${product.volume} ml` : ''].filter(Boolean).join(' · ');
+  return [format, product.family].filter(Boolean).join(' / ');
+}

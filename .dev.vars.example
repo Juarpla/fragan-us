@@ -2,8 +2,12 @@ DEMO_MODE=true
 ADMIN_USER=admin
 ADMIN_PASSWORD=cambia-esta-clave-local
 # PAYMENT_PHONE=999999999
-# TELEGRAM_BOT_TOKEN=
-# TELEGRAM_CHAT_ID=
+# Telegram para compras reales. Usa un chat privado y configura ambas variables.
+TELEGRAM_BOT_TOKEN=""
+TELEGRAM_CHAT_ID=""
+
+# Clave compartida con el workflow de enriquecimiento del catálogo.
+CATALOG_ENRICHMENT_TOKEN=""
 
 # WhatsApp de soporte, con código de país y solo dígitos.
 SUPPORT_WHATSAPP=""

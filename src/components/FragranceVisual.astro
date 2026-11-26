@@ -1,5 +1,5 @@
 ---
-import type { Product } from '../lib/catalog';
+import { productPhotoPlaceholder, type Product } from '../lib/catalog';
 
 interface Props {
   product: Pick<Product, 'name' | 'brand' | 'image_url' | 'tone' | 'badge' | 'inspiration_name' | 'inspiration_image_url'>;
@@ -7,7 +7,7 @@ interface Props {
 }
 const { product, href } = Astro.props;
 const { name, brand, image_url, tone, badge, inspiration_name, inspiration_image_url } = product;
-const photoAlt = `Frasco de ${name} de ${brand}`;
+const photoAlt = image_url === productPhotoPlaceholder ? 'Foto pendiente' : `Frasco de ${name} de ${brand}`;
 ---
 <div class:list={[href ? 'product-visual' : 'detail-visual', tone, inspiration_name && 'has-inspiration']} data-inspiration={inspiration_name ? 'product' : undefined}>
   <div class="fragrance-front" data-inspiration-front>

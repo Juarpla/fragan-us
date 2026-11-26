@@ -1,7 +1,7 @@
 ---
 import { Plus } from '@lucide/astro';
 import { audiences, tones } from '../lib/admin-products';
-import { climateLabel, occasionLabel, type Product } from '../lib/catalog';
+import { climateLabel, occasionLabel, productPhotoPlaceholder, type Product } from '../lib/catalog';
 interface Props { product?: Product & { active: number; edit_version: number } }
 const { product } = Astro.props;
 const FormContainer = product ? 'div' : 'details';
@@ -14,29 +14,48 @@ const FormContainer = product ? 'div' : 'details';
       <input type="hidden" name="version" value={product.edit_version} />
       <input type="hidden" name="previousStock" value={product.stock} />
     </>}
+    <p class="admin-form-hint"><span aria-hidden="true">*</span> Campos obligatorios</p>
     <div class="fields">
-      <label class="field">Nombre<input name="name" value={product?.name} minlength="2" maxlength="65" required /></label>
-      <label class="field">Marca<input name="brand" value={product?.brand} minlength="2" maxlength="45" required /></label>
-      <label class="field">Precio (S/)<input name="price" value={product && (product.price_cents / 100).toFixed(2)} inputmode="decimal" type="number" min=".01" max="160" step=".01" required /></label>
-      <label class="field">Unidades disponibles<input name="stock" value={product?.stock} type="number" min="0" max="10000" step="1" required /></label>
-      <label class="field">Volumen (ml)<input name="volume" value={product?.volume} type="number" min="1" max="2000" step="1" required /></label>
-      <label class="field">Concentración<input name="concentration" value={product?.concentration} maxlength="24" placeholder="Ej. EDP" required /></label>
-      <label class="field">Preferencia<select name="audience" required><option value="">Selecciona</option>{audiences.map(audience => <option selected={product?.audience === audience}>{audience}</option>)}</select></label>
-      <label class="field">Familia olfativa<input name="family" value={product?.family} maxlength="60" placeholder="Ej. Amaderado" required /></label>
-      <label class="field span-two">Descripción<textarea name="description" minlength="10" maxlength="500" rows="3" required>{product?.description}</textarea></label>
-      <label class="field">Nota de salida<input name="opening" value={product?.notes?.opening} maxlength="130" required /></label>
-      <label class="field">Nota de corazón<input name="heart" value={product?.notes?.heart} maxlength="130" required /></label>
-      <label class="field">Nota de fondo<input name="base" value={product?.notes?.base} maxlength="130" required /></label>
-      <label class="field">Fondo de la tarjeta<select name="tone">{Object.entries(tones).map(([value, label]) => <option value={value} selected={product?.tone === value}>{label}</option>)}</select></label>
-      <div class="admin-tags span-two">
-        <fieldset><legend>Clima</legend>{Object.entries(climateLabel).map(([value, label]) => <label><input name="climate" type="checkbox" value={value} checked={product?.climate.includes(value)} /> {label}</label>)}</fieldset>
-        <fieldset><legend>Ocasión</legend>{Object.entries(occasionLabel).map(([value, label]) => <label><input name="occasion" type="checkbox" value={value} checked={product?.occasions.includes(value)} /> {label}</label>)}</fieldset>
-      </div>
-      {product && <figure class="admin-product-image span-two"><img src={product.image_url} alt={product.name} width="96" height="110" class={product.tone} /><figcaption>Foto actual</figcaption></figure>}
-      <label class="field span-two">{product ? 'Reemplazar foto del perfume' : 'Foto del perfume'}<input name="photo" type="file" accept="image/jpeg,image/png,image/webp" required={!product} /><span class="muted">JPG, PNG o WebP. Hasta 8 MB.</span></label>
+      <label class="field"><span>Nombre <span class="required-mark" aria-hidden="true">*</span></span><input name="name" value={product?.name} minlength="2" maxlength="65" required /></label>
+      <label class="field"><span>Marca <span class="required-mark" aria-hidden="true">*</span></span><input name="brand" value={product?.brand} minlength="2" maxlength="45" required /></label>
+      <label class="field"><span>Precio (S/) <span class="required-mark" aria-hidden="true">*</span></span><input name="price" value={product && (product.price_cents / 100).toFixed(2)} inputmode="decimal" type="number" min=".01" max="160" step=".01" required /></label>
+      <label class="field"><span>Unidades disponibles{product && <span class="required-mark" aria-hidden="true"> *</span>}</span><input name="stock" value={product?.stock} placeholder={product ? undefined : "2"} type="number" min="0" max="10000" step="1" required={!!product} /></label>
+      {!product && <p class="admin-form-hint span-two">Si dejas este campo vacío, se guardarán 2 unidades.</p>}
+      <details class="catalog-metadata span-two" open={!!product}>
+        <summary>Detalles y fotografía</summary>
+        {!product && <p class="admin-form-hint">El catálogo buscará los datos y la foto que dejes en blanco en las fuentes configuradas para la marca.</p>}
+        <div class="fields">
+          <label class="field">Volumen (ml)<input name="volume" value={product?.volume || undefined} type="number" min="1" max="2000" step="1" /></label>
+          <label class="field">Concentración<input name="concentration" value={product?.concentration} maxlength="24" placeholder="Ej. EDP" /></label>
+          <label class="field">Preferencia<select name="audience"><option value="">Selecciona</option>{audiences.map(audience => <option selected={product?.audience === audience}>{audience}</option>)}</select></label>
+          <label class="field">Familia olfativa<input name="family" value={product?.family} maxlength="60" placeholder="Ej. Amaderado" /></label>
+          <label class="field span-two">Descripción<textarea name="description" minlength="10" maxlength="500" rows="3">{product?.description}</textarea></label>
+          <label class="field">Nota de salida<input name="opening" value={product?.notes?.opening} maxlength="130" /></label>
+          <label class="field">Nota de corazón<input name="heart" value={product?.notes?.heart} maxlength="130" /></label>
+          <label class="field">Nota de fondo<input name="base" value={product?.notes?.base} maxlength="130" /></label>
+          <label class="field">Fondo de la tarjeta<select name="tone"><option value="">Automático</option>{Object.entries(tones).map(([value, label]) => <option value={value} selected={product?.tone === value}>{label}</option>)}</select></label>
+          <div class="admin-tags span-two">
+            <fieldset><legend>Clima</legend>{Object.entries(climateLabel).map(([value, label]) => <label><input name="climate" type="checkbox" value={value} checked={product?.climate.includes(value)} /> {label}</label>)}</fieldset>
+            <fieldset><legend>Ocasión</legend>{Object.entries(occasionLabel).map(([value, label]) => <label><input name="occasion" type="checkbox" value={value} checked={product?.occasions.includes(value)} /> {label}</label>)}</fieldset>
+          </div>
+          {product && product.image_url !== productPhotoPlaceholder && <figure class="admin-product-image span-two"><img src={product.image_url} alt={product.name} width="96" height="110" class={product.tone} /><figcaption>Foto actual</figcaption></figure>}
+          <label class="field span-two">{product && product.image_url !== productPhotoPlaceholder ? 'Reemplazar foto del perfume' : 'Foto del perfume'}<input name="photo" type="file" accept="image/jpeg,image/png,image/webp" /><span class="muted">JPG, PNG o WebP. Hasta 8 MB.</span></label>
+        </div>
+      </details>
       <label class="consent span-two"><input name="active" type="checkbox" checked={!product || Boolean(product.active)} /><span>Mostrar en el catálogo</span></label>
     </div>
     <div class="checkout-actions"><button class="button primary" type="submit">Guardar perfume</button></div>
     <p class="error-message" role="alert"></p>
   </form>
 </FormContainer>
+
+<style>
+  .admin-form-hint { margin: 0 0 10px; color: var(--muted); font-size: .875rem; }
+  .required-mark, .admin-form-hint > span { color: var(--purple-deep); font-weight: 800; }
+  .fields > .admin-form-hint { margin: -3px 0 0; }
+  .catalog-metadata { border-block: 1px solid var(--line); }
+  .catalog-metadata > summary { display: flex; width: 100%; padding-inline: 0; margin-bottom: 0; border: 0; }
+  .catalog-metadata > summary::before { content: '+'; }
+  .catalog-metadata[open] > summary::before { content: '−'; }
+  .catalog-metadata[open] { padding-bottom: 15px; }
+</style>

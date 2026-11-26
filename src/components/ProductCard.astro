@@ -1,10 +1,11 @@
 ---
 import FragranceVisual from './FragranceVisual.astro';
 import { Plus } from '@lucide/astro';
-import { money, type Product } from '../lib/catalog';
+import { money, productSpecs, type Product } from '../lib/catalog';
 const { product, catalogQuery = '', highlight, heading: Heading = 'h3' } = Astro.props as { product: Product; catalogQuery?: string; highlight?: string; heading?: 'h2' | 'h3' };
-const { slug, name, brand, stock, price_cents, image_url, volume, concentration, family } = product;
+const { slug, name, brand, stock, price_cents, image_url } = product;
 const detailsHref = `/perfumes/${slug}${catalogQuery}`;
+const specs = productSpecs(product);
 const tastingNote = highlight ?? product.notes.opening?.split(',')[0]?.trim();
 ---
 <article class="product-card">
@@ -12,7 +13,7 @@ const tastingNote = highlight ?? product.notes.opening?.split(',')[0]?.trim();
   <div class="product-meta">
     <Heading class="product-name"><a href={detailsHref}>{name}</a></Heading>
     <p class="product-brand">{brand}</p>
-    <p class="product-description">{concentration} · {volume} ml <span aria-hidden="true"> / </span> {family}</p>
+    {specs && <p class="product-description">{specs}</p>}
     {tastingNote && <p class="product-note">{tastingNote}</p>}
     <div class="product-bottom">
       <strong>{money(price_cents)}</strong>

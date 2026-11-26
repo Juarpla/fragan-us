@@ -43,7 +43,8 @@ export async function loadAdminOrders(db: D1Database, request: Request, url: URL
     ARCHIVE: "status IN ('PENDING_CONFIRMATION', 'CANCELLED') OR (status = 'SHIPPED' AND archive_at <= CURRENT_TIMESTAMP)",
   };
 
-  let query = '';
+  const linkedCode = url.searchParams.get('codigo');
+  let query = validCode(linkedCode) ? linkedCode : '';
   let pageValue = url.searchParams.get('p');
   if (request.method === 'POST') {
     const form = await request.formData().catch(() => null);

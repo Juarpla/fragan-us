@@ -3,10 +3,11 @@ import { validDocument } from '../../../lib/checkout-document';
 import { reservationMinutes } from '../../../lib/orders';
 import { parseCart, priceCart } from '../../../lib/db';
 import { checkoutMode, isSameOrigin, json, validId } from '../../../lib/http';
+import { sendOrderNotification } from '../../../lib/telegram';
 import { storeEnv } from '../../../lib/runtime';
 import { districtsByCode, getAgencyDirectory } from '../../../lib/shipping-directory';
 
-export const POST: APIRoute = async ({ request }) => {
+export const POST: APIRoute = async ({ request, locals }) => {
   if (!isSameOrigin(request)) return json({ error: 'Solicitud no válida.' }, 403);
   const env = storeEnv;
   const db = env.DB;
@@ -32,6 +33,7 @@ export const POST: APIRoute = async ({ request }) => {
     return json({ error: 'Revisa tus datos y elige la agencia donde recogerás el pedido.' }, 400);
   }
 
+  let committed: Parameters<typeof sendOrderNotification>[1];
   try {
     const existing = await findExisting();
     if (existing) return json({ code: existing.order_code });
@@ -61,7 +63,10 @@ export const POST: APIRoute = async ({ request }) => {
       db.prepare(`UPDATE abandoned_carts SET status = 'CONVERTED', updated_at = CURRENT_TIMESTAMP
         WHERE session_id = ? AND status = 'ABANDONED'`).bind(sessionId),
     ]);
-    return json({ code }, 201);
+    const adminUrl = new URL('/admin/pedidos', request.url);
+    adminUrl.searchParams.set('codigo', code);
+    adminUrl.hash = 'order-list';
+    committed = { code, name, phone, payment: 'Yape o Plin (pendiente)', total: priced.total, items: priced.items, adminUrl };
   } catch (error) {
     const saved = await findExisting().catch(() => null);
     if (saved) return json({ code: saved.order_code });
@@ -70,4 +75,9 @@ export const POST: APIRoute = async ({ request }) => {
     console.error('No se pudo registrar el pedido.', error);
     return json({ error: 'No pudimos registrar el pedido. Intenta de nuevo.' }, 503);
   }
+
+  if (mode === 'live') {
+    locals.cfContext.waitUntil(sendOrderNotification(env, committed));
+  }
+  return json({ code: committed.code }, 201);
 };

@@ -1,5 +1,5 @@
 import type { APIRoute } from 'astro';
-import { climateLabel, occasionLabel } from '../../../lib/catalog';
+import { climateLabel, occasionLabel, productPhotoPlaceholder } from '../../../lib/catalog';
 import { parseProduct } from '../../../lib/admin-products';
 import { guardAdmin, isSameOrigin, json } from '../../../lib/http';
 import { imageFormat, readImageForm } from '../../../lib/images';
@@ -13,22 +13,27 @@ export const POST: APIRoute = async ({ request }) => {
   const { DB: db, RECEIPTS_BUCKET: bucket } = storeEnv;
   if (!db || !bucket) return json({ error: 'El catálogo no está disponible.' }, 503);
   const form = await readImageForm(request).catch(() => null);
-  if (!form) return json({ error: 'Revisa los datos y adjunta una foto de hasta 8 MB.' }, 400);
+  if (!form) return json({ error: 'Revisa los datos y el límite de 8 MB para la foto.' }, 400);
   const product = parseProduct(form);
   if (!product) return json({ error: 'Revisa los datos del perfume y el precio máximo de S/ 160.' }, 400);
   const image = form.get('photo');
-  const extension = image instanceof File && await imageFormat(image);
-  if (!(image instanceof File) || !extension) return json({ error: 'Adjunta una foto JPG, PNG o WebP de hasta 8 MB.' }, 400);
+  let key: string | undefined;
+  if (image instanceof File && (image.size || image.name)) {
+    const extension = await imageFormat(image);
+    if (!extension) return json({ error: 'La foto debe ser JPG, PNG o WebP y pesar hasta 8 MB.' }, 400);
+    key = `${crypto.randomUUID()}.${extension}`;
+  }
 
-  const key = `${crypto.randomUUID()}.${extension}`;
-  const photoPath = `/imagenes/perfumes/${key}`;
+  const photoPath = key ? `/imagenes/perfumes/${key}` : productPhotoPlaceholder;
   const stored = () => db.prepare('SELECT image_url FROM products WHERE slug = ?').bind(product.slug).first<{ image_url: string }>();
   try {
     if (await stored()) return json({ error: 'Ya existe un perfume con ese nombre y marca.' }, 409);
-    await bucket.put(`products/${key}`, image, { httpMetadata: { contentType: image.type } });
+    if (key && image instanceof File) {
+      await bucket.put(`products/${key}`, image, { httpMetadata: { contentType: image.type } });
+    }
   } catch (error) {
-    console.error('No se pudo guardar la foto del perfume.', error);
-    return json({ error: 'No pudimos guardar la foto del perfume. Intenta de nuevo.' }, 503);
+    console.error('No se pudo preparar la ficha del perfume.', error);
+    return json({ error: 'No pudimos preparar la ficha del perfume. Intenta de nuevo.' }, 503);
   }
   try {
     await db.prepare(`INSERT INTO products (
@@ -41,8 +46,8 @@ export const POST: APIRoute = async ({ request }) => {
     return json({ ok: true }, 201);
   } catch (error) {
     const row = await stored().catch(() => undefined);
-    if (row?.image_url === photoPath) return json({ ok: true });
-    if (row !== undefined) await bucket.delete(`products/${key}`).catch(() => undefined);
+    if (key && row?.image_url === photoPath) return json({ ok: true });
+    if (key && row !== undefined) await bucket.delete(`products/${key}`).catch(() => undefined);
     if (row) return json({ error: 'Ya existe un perfume con ese nombre y marca.' }, 409);
     console.error('No se pudo registrar el perfume.', error);
     return json({ error: 'No pudimos registrar el perfume. Intenta de nuevo.' }, 503);

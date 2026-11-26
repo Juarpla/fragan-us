@@ -4,7 +4,7 @@ import FragranceVisual from '../../components/FragranceVisual.astro';
 import Base from '../../layouts/Base.astro';
 import TikTok from '../../components/icons/TikTok.astro';
 import ProductCard from '../../components/ProductCard.astro';
-import { climateLabel, money, occasionLabel } from '../../lib/catalog';
+import { climateLabel, money, occasionLabel, productSpecs } from '../../lib/catalog';
 import { catalogHref, catalogParams, catalogSelection } from '../../lib/catalog-filters';
 import { getCatalog } from '../../lib/db';
 import { storeEnv } from '../../lib/runtime';
@@ -19,20 +19,21 @@ const notes = product ? [
   { label: 'Salida', Icon: SprayCan, notes: product.notes.opening, tone: 'sand' },
   { label: 'Corazón', Icon: Heart, notes: product.notes.heart, tone: 'rose' },
   { label: 'Fondo', Icon: Layers, notes: product.notes.base, tone: 'lilac' },
-] : [];
+].filter(note => note.notes) : [];
+const specs = product && productSpecs(product);
 const related = products.filter(item => item.slug !== product?.slug).slice(0, 4);
 ---
-<Base title={product ? `${product.name} de ${product.brand}` : 'Perfume no encontrado'} description={product?.description}>
+<Base title={product ? `${product.name} de ${product.brand}` : 'Perfume no encontrado'} description={product?.description || undefined}>
   {product ? <div class="container detail-section">
     <nav class="breadcrumbs" aria-label="Ruta de navegación"><a href="/">Inicio</a><ChevronRight size={14} /><a href={backToCatalog}>Perfumes</a><ChevronRight size={14} /><span aria-current="page">{product.name}</span></nav>
     <section class="detail-layout" aria-labelledby="product-title">
       <FragranceVisual product={product} />
       <div class="detail-info">
         <h1 id="product-title">{product.name}</h1>
-        <p class="detail-identity">{product.brand} · {product.audience}</p>
-        <p>{product.concentration} · {product.volume} ml / {product.family}</p>
+        <p class="detail-identity">{[product.brand, product.audience].filter(Boolean).join(' · ')}</p>
+        {specs && <p>{specs}</p>}
         <strong class="detail-price">{money(product.price_cents)}</strong>
-        <p>{product.description}</p>
+        {product.description && <p>{product.description}</p>}
         <p class="detail-stock">{product.stock > 0 ? `${product.stock} ${product.stock === 1 ? 'unidad disponible' : 'unidades disponibles'}` : 'Agotado'}</p>
         <div class="detail-actions">
           <button class="button primary" type="button" data-add={JSON.stringify(product)} disabled={!product.stock}><ShoppingBag size={18} aria-hidden="true" /> Agregar a la bolsa</button>
@@ -44,7 +45,7 @@ const related = products.filter(item => item.slug !== product?.slug).slice(0, 4)
         })}</div>
       </div>
     </section>
-    <section class="note-section" aria-labelledby="notes-title">
+    {notes.length > 0 && <section class="note-section" aria-labelledby="notes-title">
       <h2 id="notes-title">Notas olfativas</h2>
       <dl class="note-grid">
         {notes.map(({ label, Icon, notes, tone }) => (
@@ -54,7 +55,7 @@ const related = products.filter(item => item.slug !== product?.slug).slice(0, 4)
           </div>
         ))}
       </dl>
-    </section>
+    </section>}
   </div> : <section class="container inner-section"><h1 class="inner-title">Perfume no encontrado</h1><a class="button primary" href={backToCatalog}>Explorar perfumes <ArrowRight size={18} /></a></section>}
   {product && related.length > 0 && <section class="container detail-section"><div class="section-heading"><h2>También te puede gustar</h2></div><div class="product-grid">{related.map(item => <ProductCard product={item} catalogQuery={catalogParams(filters, query, page)} />)}</div></section>}
 </Base>

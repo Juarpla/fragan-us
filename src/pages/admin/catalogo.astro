@@ -4,7 +4,7 @@ import { guardAdmin } from '../../lib/http';
 import { storeEnv } from '../../lib/runtime';
 import { ArrowUpRight, Box, Plus, Sparkles } from '@lucide/astro';
 import AdminProductForm from '../../components/AdminProductForm.astro';
-import type { Product } from '../../lib/catalog';
+import { productPhotoPlaceholder, type Product } from '../../lib/catalog';
 const denied = await guardAdmin(Astro.request, storeEnv);
 if (denied) return denied;
 Astro.response.headers.set('Cache-Control', 'private, no-store');
@@ -28,7 +28,7 @@ const { results: stock } = await db.prepare('SELECT slug, name, brand, stock, ac
         <article class="admin-record">
           <div class="admin-stock-product">
             <img src={product.image_url} alt="" width="52" height="56" class={product.tone} loading="lazy" />
-            <div><strong>{product.name}</strong><p>{product.brand} · {!product.active ? 'Oculto' : product.stock ? 'Disponible' : 'Agotado'}</p><a class="inline-link" href={`/admin/catalogo/${product.slug}`}>Editar perfume <ArrowUpRight size={13} aria-hidden="true" /></a></div>
+            <div><strong>{product.name}</strong><p>{product.brand} · {!product.active ? 'Oculto' : product.stock ? 'Disponible' : 'Agotado'}{product.image_url === productPhotoPlaceholder && ' · Foto pendiente'}</p><a class="inline-link" href={`/admin/catalogo/${product.slug}`}>Editar perfume <ArrowUpRight size={13} aria-hidden="true" /></a></div>
           </div>
           <form class="admin-stock-form" data-stock={product.slug} data-previous-stock={product.stock} data-previous-active={product.active} data-previous-price={product.price_cents}>
             <label class="field">Precio (S/)<input name="price" type="number" inputmode="decimal" min=".01" max="160" step=".01" value={(product.price_cents / 100).toFixed(2)} required /></label>
@@ -56,7 +56,7 @@ const { results: stock } = await db.prepare('SELECT slug, name, brand, stock, ac
             </form>
           </details>
         </article>
-      ))}</div> : <p class="muted">Agrega tu primer perfume con su foto, precio y stock.</p>}
+      ))}</div> : <p class="muted">Agrega tu primer perfume con su nombre, marca y precio.</p>}
     </section>
   </div>
 </AdminLayout>

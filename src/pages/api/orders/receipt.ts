@@ -1,11 +1,10 @@
 import type { APIRoute } from 'astro';
-import { checkoutMode, isSameOrigin, json, shippingLabels, validCode } from '../../../lib/http';
-import { canSubmitReceipt, expireReservations, hasReceipt, orderItems, type OrderRow } from '../../../lib/orders';
+import { checkoutMode, isSameOrigin, json, validCode } from '../../../lib/http';
+import { canSubmitReceipt, expireReservations, hasReceipt, type OrderRow } from '../../../lib/orders';
 import { imageFormat, readImageForm } from '../../../lib/images';
 import { storeEnv } from '../../../lib/runtime';
-import { sendOrderNotification } from '../../../lib/telegram';
 
-export const POST: APIRoute = async ({ request, locals }) => {
+export const POST: APIRoute = async ({ request }) => {
   if (!isSameOrigin(request)) return json({ error: 'Solicitud no válida.' }, 403);
   const env = storeEnv;
   const db = env.DB;
@@ -43,13 +42,7 @@ export const POST: APIRoute = async ({ request, locals }) => {
   try {
     const update = await db.prepare(`UPDATE orders SET payment_method = ?, receipt_r2_key = ?, status = 'PENDING_VERIFICATION'
       WHERE order_code = ? AND status IN ('AWAITING_PAYMENT', 'EXPIRED')`).bind(payment, key, code).run();
-    if (update.meta.changes) {
-      if (mode === 'live') locals.cfContext.waitUntil(sendOrderNotification(env, {
-        code, name: order.customer_name, phone: order.customer_phone, city: order.city,
-        shipping: shippingLabels[order.shipping_method], payment: payment ?? 'Yape o Plin', total: order.total_cents, items: orderItems(order.items_json),
-      }, receipt));
-      return json({ code }, 201);
-    }
+    if (update.meta.changes) return json({ code }, 201);
   } catch (error) {
     console.error('No se pudo confirmar la escritura del comprobante.', error);
   }
