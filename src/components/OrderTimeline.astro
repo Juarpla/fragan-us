@@ -1,0 +1,22 @@
+---
+import { Check, ClipboardCheck, CreditCard, Package, Truck } from '@lucide/astro';
+const { status } = Astro.props;
+const active = status === 'SHIPPED' ? 3 : ['PAID', 'PACKING'].includes(status) ? 2 : status === 'PENDING_VERIFICATION' ? 1 : 0;
+const steps = [
+  { label: 'Pago', Icon: CreditCard },
+  { label: 'Verificación', Icon: ClipboardCheck },
+  { label: 'En preparación', Icon: Package },
+  { label: 'Enviado', Icon: Truck },
+];
+---
+<ol class="order-timeline" role="list" aria-label="Progreso de tu pedido">
+  {steps.map(({ label, Icon }, index) => (
+    <li class:list={[index < active && 'is-complete', index === active && 'is-current']}
+        aria-current={index === active ? 'step' : undefined}>
+      <span class="order-timeline-icon">
+        {index < active ? <Check size={18} aria-hidden="true" /> : <Icon size={18} aria-hidden="true" />}
+      </span>
+      <span>{label}{index < active && <span class="sr-only">, completado</span>}</span>
+    </li>
+  ))}
+</ol>

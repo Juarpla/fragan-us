@@ -1,10 +1,10 @@
 ---
-import { ArrowUpRight } from '@lucide/astro';
+import { Archive, ArrowUpRight, Box, ClipboardList, FileCheck, PackageCheck, QrCode, ShoppingBag, Truck } from '@lucide/astro';
 import AdminProductForm from '../../components/AdminProductForm.astro';
 import Base from '../../layouts/Base.astro';
 import { money, type Product } from '../../lib/catalog';
 import { guardAdmin, shippingLabels } from '../../lib/http';
-import { expireReservations, orderItems, statusLabel, type CartRow, type OrderRow } from '../../lib/orders';
+import { expireReservations, orderItems, orderStages, orderStatusLabel, type CartRow, type OrderRow } from '../../lib/orders';
 import { storeEnv } from '../../lib/runtime';
 
 const denied = await guardAdmin(Astro.request, storeEnv);
@@ -12,22 +12,40 @@ if (denied) return denied;
 Astro.response.headers.set('Cache-Control', 'private, no-store');
 Astro.response.headers.set('Referrer-Policy', 'no-referrer');
 
-type StockRow = Pick<Product, 'slug' | 'name' | 'brand' | 'stock'> & { active: number };
+type StockRow = Pick<Product, 'slug' | 'name' | 'brand' | 'stock' | 'price_cents'> & { active: number };
 
 const db = storeEnv.DB;
 if (!db) return new Response('Base de datos no disponible.', { status: 503 });
 
-const selected = Astro.url.searchParams.get('estado') ?? 'PENDING_VERIFICATION';
-const filter = Object.hasOwn(statusLabel, selected) ? selected : 'PENDING_VERIFICATION';
+const selected = Astro.url.searchParams.get('estado');
+const stages = [...orderStages, { id: 'ARCHIVE', label: 'Solicitudes anteriores' }] as const;
+const legacyStates: Record<string, string> = { PAID: 'PACKING', PENDING_CONFIRMATION: 'ARCHIVE', CANCELLED: 'ARCHIVE' };
+const filter = stages.find(({ id }) => id === (legacyStates[selected ?? ''] ?? selected))?.id ?? 'PENDING_VERIFICATION';
+const conditions = {
+  PENDING_VERIFICATION: "status = 'PENDING_VERIFICATION'",
+  PACKING: "status IN ('PAID', 'PACKING')",
+  SHIPPED: "status = 'SHIPPED' AND (archive_at IS NULL OR archive_at > CURRENT_TIMESTAMP)",
+  ARCHIVE: "status IN ('PENDING_CONFIRMATION', 'CANCELLED') OR (status = 'SHIPPED' AND archive_at <= CURRENT_TIMESTAMP)",
+};
 const page = Math.max(1, Math.min(5000, Number(Astro.url.searchParams.get('p')) || 1)) | 0;
 const limit = 25;
 await expireReservations(db);
 const [orderResult, cartResult, stockResult] = await Promise.all([
-  db.prepare('SELECT * FROM orders WHERE status = ? ORDER BY created_at DESC, order_code DESC LIMIT ? OFFSET ?')
-    .bind(filter, limit + 1, (page - 1) * limit).all<OrderRow>(),
+  db.prepare(`SELECT * FROM orders WHERE ${conditions[filter]}
+      ORDER BY COALESCE(shipped_at, created_at) DESC, order_code DESC LIMIT ? OFFSET ?`)
+    .bind(limit + 1, (page - 1) * limit).all<OrderRow>(),
   db.prepare("SELECT * FROM abandoned_carts WHERE status = 'ABANDONED' ORDER BY updated_at DESC LIMIT 30").all<CartRow>(),
-  db.prepare('SELECT slug, name, brand, stock, active FROM products ORDER BY active DESC, position, name').all<StockRow>(),
+  db.prepare('SELECT slug, name, brand, stock, active, price_cents FROM products ORDER BY active DESC, position, name').all<StockRow>(),
 ]);
+const dateFormat = new Intl.DateTimeFormat('es-PE', { dateStyle: 'medium', timeStyle: 'short', timeZone: 'America/Lima' });
+const date = (value: string) => dateFormat.format(new Date(value.replace(' ', 'T') + 'Z'));
+const stageIcons = [FileCheck, PackageCheck, Truck];
+const sections = [
+  { id: 'order-list', label: 'Pedidos', Icon: ClipboardList },
+  { id: 'stock', label: 'Catálogo y stock', Icon: Box },
+  { id: 'payment-settings', label: 'QR de pago', Icon: QrCode },
+  { id: 'cart-list', label: 'Bolsas pendientes', Icon: ShoppingBag },
+];
 const orders = orderResult.results.slice(0, limit);
 const carts = cartResult.results;
 const stock = stockResult.results;
@@ -44,56 +62,63 @@ const whatsAppAction = (order: OrderRow) => {
     PACKING: { label: 'Avisar del empaquetado', message: `Hola, confirmamos tu pedido ${order.order_code} y ya lo estamos preparando. Puedes consultar su estado en ${link}.` },
     SHIPPED: { label: 'Avisar del envío', message: `Hola, tu pedido ${order.order_code} ya va en camino a la agencia que elegiste. Puedes consultar su estado en ${link}.` },
   };
-  const action = actions[order.status];
+  const action = actions[order.status === 'PAID' ? 'PACKING' : order.status];
   return action ? { label: action.label, href: `${base}?text=${encodeURIComponent(action.message)}` } : { label: 'WhatsApp', href: base };
 };
 ---
 <Base title="Administración" minimal privatePage>
-  <section class="container inner-section">
-    <h1 class="inner-title">Administración</h1>
-    <nav class="filters mb-4" aria-label="Secciones de administración">
-      <a class="filter" href="#order-list">Pedidos</a>
-      <a class="filter" href="#stock">Catálogo y stock</a>
-      <a class="filter" href="#payment-settings">QR de pago</a>
-      <a class="filter" href="#cart-list">Bolsas pendientes</a>
-    </nav>
-    <div class="admin-stack">
-      <section class="panel" aria-labelledby="order-list">
+  <section class="container inner-section admin-page">
+    <h1 class="admin-title">Administración</h1>
+    <div class="admin-layout">
+      <nav class="admin-nav" aria-label="Secciones de administración">
+        {sections.map(({ id, label, Icon }) => <a href={`#${id}`}><Icon size={19} aria-hidden="true" />{label}</a>)}
+      </nav>
+      <div class="admin-stack">
+      <section class="panel admin-section" aria-labelledby="order-list">
         <h2 id="order-list">Pedidos</h2>
-        <nav class="filters mb-3" aria-label="Estados de pedido">{Object.entries(statusLabel).map(([status, label]) =>
-          <a class:list={['filter', status === filter && 'selected']} aria-current={status === filter ? 'page' : undefined} href={`/admin?estado=${status}`}>{label}</a>)}</nav>
+        <nav class="admin-order-nav" aria-label="Estados de pedido">
+          <ol class="admin-stages" role="list">
+            {orderStages.map(({ id, label }, index) => {
+              const Icon = stageIcons[index];
+              return <li><a href={`/admin?estado=${id}#order-list`} aria-current={filter === id ? 'page' : undefined}>
+                <span class="admin-stage-icon"><Icon size={19} aria-hidden="true" /></span><span>{label}</span>
+              </a></li>;
+            })}
+          </ol>
+          <a class="admin-archive" href="/admin?estado=ARCHIVE#order-list" aria-current={filter === 'ARCHIVE' ? 'page' : undefined}><Archive size={18} aria-hidden="true" /> Solicitudes anteriores</a>
+        </nav>
         {orders.length ? orders.map(order => {
           const whatsApp = whatsAppAction(order);
-          return <article class="admin-record">
-          <div>
-            <strong>{order.order_code} · {money(order.total_cents)}{order.payment_method && ` · ${order.payment_method}`}</strong>
-            {order.is_demo === 1 && <span> · Prueba</span>}
-            <p>{order.customer_name} · +51 {order.customer_phone}</p>
-            <p>{order.city} · {shippingLabels[order.shipping_method]}</p>
-            <p>{order.shipping_address}</p>
-            {order.whatsapp_offers === 1 && <p class="muted">Aceptó ofertas por WhatsApp.</p>}
-            {order.status === 'PENDING_VERIFICATION' && order.stock_reserved === 0 && <p class="muted">Verifica que haya stock antes de aprobar el pago.</p>}
-            <ul>{orderItems(order.items_json).map(item => <li>{item.quantity} × {item.name}</li>)}</ul>
-            <p class="muted">{order.created_at} UTC</p>
-          </div>
-          <div class="admin-record-actions">
-            {order.is_demo !== 1 && <a class="inline-link" href={whatsApp.href} rel="noreferrer" target="_blank">{whatsApp.label} <ArrowUpRight size={15} aria-hidden="true" /></a>}
-            {order.receipt_r2_key && <a class="button secondary" href={`/api/admin/receipt?code=${order.order_code}`} rel="noreferrer" target="_blank">Ver comprobante</a>}
-            {order.status === 'PENDING_CONFIRMATION' && <button class="button primary" data-order={order.order_code} data-action="enable_payment">Habilitar pago</button>}
-            {order.status === 'PENDING_VERIFICATION' && <button class="button primary" data-order={order.order_code} data-action="pay">Verificar y aprobar pago</button>}
-            {['PENDING_CONFIRMATION', 'AWAITING_PAYMENT', 'PENDING_VERIFICATION', 'EXPIRED'].includes(order.status) && <button class="button secondary" data-order={order.order_code} data-action="cancel">Cancelar pedido</button>}
-            {order.status === 'PAID' && <button class="button primary" data-order={order.order_code} data-action="pack">Confirmar para empaquetado</button>}
-            {order.status === 'PACKING' && <button class="button primary" data-order={order.order_code} data-action="ship">Marcar como enviado</button>}
-          </div>
-          <p class="error-message w-full" role="alert"></p>
-        </article>;
-        }) : <p class="muted">No hay pedidos en este estado.</p>}
+          return <article class="admin-record admin-order">
+            <header class="admin-order-heading">
+              <div><h3>{order.order_code}</h3><p class="muted">{date(order.created_at)}{order.is_demo === 1 && ' · Prueba'}</p></div>
+              <div><strong>{money(order.total_cents)}</strong>{order.payment_method && <p class="muted">{order.payment_method}</p>}</div>
+            </header>
+            <div class="admin-order-details">
+              <div><h4>Cliente</h4><p>{order.customer_name} · +51 {order.customer_phone}</p>
+                {order.whatsapp_offers === 1 && <p class="muted">Aceptó novedades por WhatsApp.</p>}</div>
+              <div><h4>Perfumes</h4><ul>{orderItems(order.items_json).map(item => <li>{item.quantity} × {item.name}</li>)}</ul></div>
+              <div class="admin-order-destination"><h4>Destino</h4><p>{order.city} · {shippingLabels[order.shipping_method]}</p><p class="muted">{order.shipping_address}</p></div>
+            </div>
+            {filter === 'ARCHIVE' && <p class="admin-order-note">{orderStatusLabel[order.status]}</p>}
+            {order.status === 'PENDING_VERIFICATION' && order.stock_reserved === 0 && <p class="notice admin-order-note">Verifica que haya stock antes de aprobar el pago.</p>}
+            <div class="admin-record-actions">
+              {order.status === 'PENDING_CONFIRMATION' && <button class="button primary" data-order={order.order_code} data-action="enable_payment">Habilitar pago</button>}
+              {order.status === 'PENDING_VERIFICATION' && <button class="button primary" data-order={order.order_code} data-action="pay">Verificar pago</button>}
+              {['PAID', 'PACKING'].includes(order.status) && <button class="button primary" data-order={order.order_code} data-action="ship">Marcar como enviado</button>}
+              {order.receipt_r2_key && <a class="button secondary" href={`/api/admin/receipt?code=${order.order_code}`} rel="noreferrer" target="_blank">Ver comprobante</a>}
+              {order.is_demo !== 1 && <a class="button secondary" href={whatsApp.href} rel="noreferrer" target="_blank">{whatsApp.label} <ArrowUpRight size={15} aria-hidden="true" /></a>}
+              {['PENDING_CONFIRMATION', 'PENDING_VERIFICATION'].includes(order.status) && <button class="button secondary" data-order={order.order_code} data-action="cancel">Cancelar pedido</button>}
+            </div>
+            <p class="error-message" role="alert"></p>
+          </article>;
+        }) : <p class="admin-empty">{filter === 'ARCHIVE' ? 'Aún no hay pedidos en el historial.' : 'No hay pedidos en esta etapa.'}</p>}
         {(page > 1 || orderResult.results.length > limit) && <nav class="checkout-actions" aria-label="Páginas de pedidos">
-          {page > 1 && <a class="button secondary" href={`/admin?estado=${filter}&p=${page - 1}`}>Anterior</a>}
-          {orderResult.results.length > limit && <a class="button secondary" href={`/admin?estado=${filter}&p=${page + 1}`}>Siguiente</a>}
+          {page > 1 && <a class="button secondary" href={`/admin?estado=${filter}&p=${page - 1}#order-list`}>Anterior</a>}
+          {orderResult.results.length > limit && <a class="button secondary" href={`/admin?estado=${filter}&p=${page + 1}#order-list`}>Siguiente</a>}
         </nav>}
       </section>
-      <section class="panel" aria-labelledby="stock">
+      <section class="panel admin-section" aria-labelledby="stock">
         <h2 id="stock">Catálogo y stock</h2>
         <AdminProductForm />
         {stock.length ? <div class="admin-stock-list">{stock.map(product => (
@@ -101,7 +126,8 @@ const whatsAppAction = (order: OrderRow) => {
             <div>
               <strong>{product.name}</strong><p>{product.brand} · {!product.active ? 'Oculto' : product.stock ? 'Disponible' : 'Agotado'}</p>
             </div>
-            <form class="admin-stock-form" data-stock={product.slug} data-previous-stock={product.stock} data-previous-active={product.active}>
+            <form class="admin-stock-form" data-stock={product.slug} data-previous-stock={product.stock} data-previous-active={product.active} data-previous-price={product.price_cents}>
+              <label class="field">Precio (S/)<input name="price" type="number" inputmode="decimal" min=".01" max="160" step=".01" value={(product.price_cents / 100).toFixed(2)} required /></label>
               <label class="field">Unidades disponibles<input name="stock" type="number" min="0" max="10000" step="1" value={product.stock} required /></label>
               <label class="stock-visible"><input name="active" type="checkbox" checked={Boolean(product.active)} /> Mostrar en catálogo</label>
               <button class="button secondary" type="submit">Guardar cambios</button>
@@ -110,7 +136,7 @@ const whatsAppAction = (order: OrderRow) => {
           </article>
         ))}</div> : <p class="muted">Agrega tu primer perfume con su foto, precio y stock.</p>}
       </section>
-      <section class="panel" aria-labelledby="payment-settings">
+      <section class="panel admin-section" aria-labelledby="payment-settings">
         <h2 id="payment-settings">QR de pago</h2>
         <form class="admin-payment-form" data-payment-qr-form enctype="multipart/form-data">
           <p class="muted" role="status">{hasPaymentQR ? 'Hay un QR configurado para el paso de pago.' : 'Sube la imagen oficial de tu cuenta de Yape o Plin.'}</p>
@@ -119,13 +145,14 @@ const whatsAppAction = (order: OrderRow) => {
           <p class="error-message" role="alert"></p>
         </form>
       </section>
-      <section class="panel" aria-labelledby="cart-list">
+      <section class="panel admin-section" aria-labelledby="cart-list">
         <h2 id="cart-list">Bolsas pendientes</h2>
         {carts.length ? carts.map(cart => <article class="admin-record">
           <div><strong>{cart.customer_name || 'Cliente'} · {money(cart.total_cents)}</strong><p>+51 {cart.customer_phone}</p><p>{orderItems(cart.items_json).map(item => `${item.quantity} × ${item.name}`).join(', ')}</p><p class="muted">{cart.updated_at} UTC</p></div>
           {storeEnv.DEMO_MODE !== 'true' && <a class="inline-link" href={wa(cart.customer_phone)} rel="noreferrer" target="_blank">Contactar por WhatsApp <ArrowUpRight size={15} /></a>}
         </article>) : <p class="muted">No hay bolsas pendientes con autorización de contacto.</p>}
       </section>
+      </div>
     </div>
     <p class="admin-feedback" role="status" data-admin-feedback></p>
   </section>

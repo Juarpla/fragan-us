@@ -1,23 +1,21 @@
 import type { OrderItem } from './db';
 
-export const statusLabel: Record<string, string> = {
-  PENDING_VERIFICATION: 'Por verificar',
-  PAID: 'Pagados',
-  PACKING: 'En preparación',
-  AWAITING_PAYMENT: 'En espera de pago',
-  PENDING_CONFIRMATION: 'Solicitudes anteriores',
-  EXPIRED: 'Reservas vencidas',
-  SHIPPED: 'Pedido enviado',
-  CANCELLED: 'Pedido cancelado',
-};
+export const orderStages = [
+  { id: 'PENDING_VERIFICATION', label: 'Por verificar' },
+  { id: 'PACKING', label: 'En preparación' },
+  { id: 'SHIPPED', label: 'Enviados' },
+] as const;
 
-export const customerStatusLabel = {
-  ...statusLabel,
-  PENDING_VERIFICATION: 'Por verificar el pago',
-  PAID: 'Pago verificado',
+export const orderStatusLabel: Record<string, string> = {
   PENDING_CONFIRMATION: 'Solicitud registrada',
+  AWAITING_PAYMENT: 'Pago pendiente',
   EXPIRED: 'Reserva vencida',
-} as Record<string, string>;
+  PENDING_VERIFICATION: 'Por verificar',
+  PAID: 'En preparación',
+  PACKING: 'En preparación',
+  SHIPPED: 'Enviado',
+  CANCELLED: 'Cancelado',
+};
 
 export interface OrderRow {
   order_code: string;
@@ -34,6 +32,8 @@ export interface OrderRow {
   whatsapp_offers: number;
   stock_reserved: number;
   reserved_until: string | null;
+  shipped_at: string | null;
+  archive_at: string | null;
   payment_method: string | null;
   receipt_r2_key: string | null;
   status: string;

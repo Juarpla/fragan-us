@@ -55,16 +55,23 @@ export const PATCH: APIRoute = async ({ request }) => {
   const db = storeEnv.DB;
   if (!db) return json({ error: 'El catálogo no está disponible.' }, 503);
   const data = await request.json<Record<string, unknown> | null>().catch(() => null);
-  const { slug, stock, active, previousStock, previousActive } = data ?? {};
+  const { slug, stock, active, priceCents, previousStock, previousActive, previousPriceCents } = data ?? {};
   if (typeof slug !== 'string' || !/^[a-z0-9-]{1,80}$/.test(slug) ||
       typeof stock !== 'number' || !Number.isInteger(stock) || stock < 0 || stock > 10000 ||
       !Number.isInteger(previousStock) || typeof active !== 'boolean' || typeof previousActive !== 'boolean') {
     return json({ error: 'Revisa el número de unidades.' }, 400);
   }
+  const updatesPrice = priceCents !== undefined;
+  if (updatesPrice && (typeof priceCents !== 'number' || !Number.isInteger(priceCents) ||
+      priceCents < 1 || priceCents > 16000 || !Number.isInteger(previousPriceCents))) {
+    return json({ error: 'Revisa el precio. El máximo es S/ 160.' }, 400);
+  }
   try {
     await expireReservations(db);
-    const result = await db.prepare('UPDATE products SET stock = ?, active = ? WHERE slug = ? AND stock = ? AND active = ?')
-      .bind(stock, Number(active), slug, previousStock, Number(previousActive)).run();
+    const result = await db.prepare(`UPDATE products SET stock = ?, active = ?, price_cents = COALESCE(?, price_cents)
+      WHERE slug = ? AND stock = ? AND active = ? AND (? IS NULL OR price_cents = ?)`)
+      .bind(stock, Number(active), priceCents ?? null, slug, previousStock, Number(previousActive),
+        previousPriceCents ?? null, previousPriceCents ?? null).run();
     if (!result.meta.changes) return json({ error: 'El inventario cambió. Actualiza el panel antes de guardar.' }, 409);
     return json({ ok: true });
   } catch (error) {

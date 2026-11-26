@@ -1,10 +1,11 @@
 ---
-import { ArrowRight, CircleCheck, Copy, Link2, RefreshCw } from '@lucide/astro';
+import { ArrowRight, Copy, Link2, RefreshCw } from '@lucide/astro';
+import OrderTimeline from '../../components/OrderTimeline.astro';
 import WhatsApp from '../../components/icons/WhatsApp.astro';
 import Base from '../../layouts/Base.astro';
 import { money } from '../../lib/catalog';
 import { checkoutMode, validCode } from '../../lib/http';
-import { canSubmitReceipt, customerStatusLabel, expireReservations, isPayable, type OrderRow } from '../../lib/orders';
+import { canSubmitReceipt, expireReservations, isPayable, type OrderRow } from '../../lib/orders';
 import { storeEnv } from '../../lib/runtime';
 
 const code = Astro.params.code;
@@ -21,9 +22,9 @@ const message: Record<string, string> = {
   AWAITING_PAYMENT: 'Paga los perfumes por Yape o Plin y adjunta el comprobante.',
   EXPIRED: 'La reserva venció. Si ya pagaste, todavía puedes enviar tu comprobante para que lo revisemos.',
   PENDING_VERIFICATION: 'Recibimos tu comprobante. Verificaremos el abono antes de confirmar tu pedido.',
-  PAID: 'Verificamos tu pago. Tu pedido está en espera de preparación.',
-  PACKING: 'Confirmamos tu pedido y lo estamos preparando para enviarlo a la agencia que elegiste.',
-  SHIPPED: 'Tu pedido está en camino a la agencia de destino.',
+  PAID: 'Verificamos tu pago y estamos preparando el pedido.',
+  PACKING: 'Verificamos tu pago y estamos preparando el pedido para enviarlo a la agencia que elegiste.',
+  SHIPPED: 'Tu pedido ya fue enviado a la agencia de destino.',
   CANCELLED: 'El pedido fue cancelado.',
 };
 const mode = checkoutMode(storeEnv);
@@ -37,15 +38,14 @@ const supportHref = !supportPhone || !/^51[0-9]{9}$/.test(supportPhone) ? undefi
 <Base title="Estado del pedido" minimal privatePage>
   <section class="container inner-section">
     {order ? <div class="order-result">
-      <CircleCheck size={39} stroke-width={1.6} class="text-purple-700" aria-hidden="true" />
       <h1 class="inner-title">{order.status === 'PENDING_CONFIRMATION' ? 'Recibimos tu solicitud' : 'Estado de tu pedido'}</h1>
       {order.is_demo === 1 && <p class="notice">Pedido de prueba.</p>}
       <p class="inner-copy">{message[order.status]}</p>
       <div class="panel">
         <p class="muted">Código del pedido</p>
         <code class="order-code">{order.order_code}</code>
-        <p class="mt-3"><strong>{customerStatusLabel[order.status]}</strong></p>
-        <p class="order-freight"><span>Total en productos</span><strong>{money(order.total_cents)}</strong></p>
+        {order.status !== 'CANCELLED' && <OrderTimeline status={order.status} />}
+        <p class="order-freight"><span>Total</span><strong>{money(order.total_cents)}</strong></p>
         {order.status !== 'CANCELLED' && <p class="muted mt-2">El transportista fija y cobra el flete por separado.</p>}
         <div class="order-share" data-order-share>
           <p class="muted">Guarda el enlace para consultar el estado de tu pedido.</p>

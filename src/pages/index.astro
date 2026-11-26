@@ -1,5 +1,5 @@
 ---
-import { ArrowDown, ArrowRight, CreditCard, Sparkles, Truck } from '@lucide/astro';
+import { ArrowDown, ArrowRight, CreditCard, MapPin, Sparkles, Truck } from '@lucide/astro';
 import Base from '../layouts/Base.astro';
 import ProductCard from '../components/ProductCard.astro';
 import { catalogHref, catalogSelection } from '../lib/catalog-filters';
@@ -49,8 +49,14 @@ const featured = [...curated, ...products.filter(product => !highlights.has(prod
       <p class="muted">Aún no hay perfumes en el catálogo.</p>}
   </section>
 
-  <div class="container home-shipping" id="envios">
-    <Truck size={22} aria-hidden="true" />
-    <a class="inline-link" href="/envios">Cómo funcionan los envíos <ArrowRight size={16} aria-hidden="true" /></a>
-  </div>
+  <section class="container home-shipping" id="envios" aria-labelledby="home-shipping-title">
+    <div>
+      <h2 id="home-shipping-title">Envíos a todo el Perú</h2>
+      <a class="inline-link" href="/envios">Cómo funcionan los envíos <ArrowRight size={16} aria-hidden="true" /></a>
+    </div>
+    <div class="home-shipping-details">
+      <div><Truck size={22} aria-hidden="true" /><h3>Envío por agencia</h3><p>Por ahora enviamos preferentemente por Shalom. Elige tu agencia al finalizar la compra.</p></div>
+      <div><MapPin size={22} aria-hidden="true" /><h3>Flete por separado</h3><p>El transportista cobra el flete cuando recoges tu pedido.</p></div>
+    </div>
+  </section>
 </Base>

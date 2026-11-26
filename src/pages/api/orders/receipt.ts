@@ -15,9 +15,10 @@ export const POST: APIRoute = async ({ request, locals }) => {
   const form = await readImageForm(request).catch(() => null);
   if (!form) return json({ error: 'Adjunta un comprobante de hasta 8 MB.' }, 400);
   const code = form.get('code');
-  const payment = form.get('payment');
-  if (!validCode(code) || (payment !== 'YAPE' && payment !== 'PLIN')) {
-    return json({ error: 'Revisa tu código y el medio de pago.' }, 400);
+  const method = form.get('payment');
+  const payment = method === 'YAPE' || method === 'PLIN' ? method : null;
+  if (!validCode(code) || (method !== null && !payment)) {
+    return json({ error: 'Revisa los datos de tu pedido.' }, 400);
   }
 
   const findOrder = () => db.prepare('SELECT * FROM orders WHERE order_code = ? AND is_demo = ?')
@@ -45,7 +46,7 @@ export const POST: APIRoute = async ({ request, locals }) => {
     if (update.meta.changes) {
       if (mode === 'live') locals.cfContext.waitUntil(sendOrderNotification(env, {
         code, name: order.customer_name, phone: order.customer_phone, city: order.city,
-        shipping: shippingLabels[order.shipping_method], payment, total: order.total_cents, items: orderItems(order.items_json),
+        shipping: shippingLabels[order.shipping_method], payment: payment ?? 'Yape o Plin', total: order.total_cents, items: orderItems(order.items_json),
       }, receipt));
       return json({ code }, 201);
     }

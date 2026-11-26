@@ -22,7 +22,7 @@ Abre `http://127.0.0.1:4321`. En el checkout local usa datos ficticios y una ima
 
 En [/admin](https://fragan-us.juarpla.workers.dev/admin), **Catálogo y stock** permite crear perfumes con su foto, registrar unidades y decidir si se muestran en la tienda. En **QR de pago**, sube la imagen oficial de Yape o Plin. La tienda la muestra en el paso de pago.
 
-El comprador elige una agencia y continúa al pago. Durante 30 minutos, el pedido reserva las unidades disponibles. Al adjuntar el comprobante, pasa a **Por verificar**. Comprueba el abono en Yape o Plin y pulsa **Verificar y aprobar pago**. Desde **Pagados**, pulsa **Confirmar para empaquetado**. Una vez que el transportista reciba el paquete, pulsa **Marcar como enviado**. El comprador puede consultar el estado con su enlace. El transportista fija y cobra el flete por separado.
+El comprador elige una agencia y continúa al pago. Durante 30 minutos, el pedido reserva las unidades disponibles. Al adjuntar el comprobante, pasa a **Por verificar**. Comprueba el abono en Yape o Plin y pulsa **Verificar pago**. El pedido pasa directamente a **En preparación**. Una vez que el transportista reciba el paquete, pulsa **Marcar como enviado**. Cinco días hábiles después, contando de lunes a viernes en hora de Perú, el panel lo mueve a **Solicitudes anteriores**. El comprador puede consultar el estado con su enlace. El transportista fija y cobra el flete por separado.
 
 Si la reserva vence, las unidades vuelven al catálogo. Si el comprador ya pagó, puede adjuntar su comprobante desde el enlace del pedido. Antes de aprobar ese pago, revisa la disponibilidad de los perfumes. **Bolsas pendientes** muestra las bolsas de las personas que optaron por recibir recordatorios y ofertas por WhatsApp.
 

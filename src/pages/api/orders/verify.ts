@@ -5,9 +5,9 @@ import { storeEnv } from '../../../lib/runtime';
 
 const transitions = {
   enable_payment: { to: 'AWAITING_PAYMENT', from: ['PENDING_CONFIRMATION'] },
-  pay: { to: 'PAID', from: ['PENDING_VERIFICATION'] },
+  pay: { to: 'PACKING', from: ['PENDING_VERIFICATION'] },
   pack: { to: 'PACKING', from: ['PAID'] },
-  ship: { to: 'SHIPPED', from: ['PACKING'] },
+  ship: { to: 'SHIPPED', from: ['PAID', 'PACKING'] },
   cancel: { to: 'CANCELLED', from: ['PENDING_CONFIRMATION', 'AWAITING_PAYMENT', 'PENDING_VERIFICATION', 'EXPIRED'] },
 } as const;
 
@@ -32,7 +32,7 @@ export const POST: APIRoute = async ({ request }) => {
     if (result.meta.changes) return json({ ok: true });
     const row = await db.prepare('SELECT status FROM orders WHERE order_code = ?').bind(code).first<{ status: string }>();
     if (!row) return json({ error: 'No se encontró el pedido.' }, 404);
-    if (row.status === to) return json({ ok: true });
+    if (row.status === to || (action === 'pay' && row.status === 'PAID')) return json({ ok: true });
     return json({ error: 'El pedido cambió de estado. Actualiza el panel.' }, 409);
   } catch (error) {
     if (String(error).includes('INSUFFICIENT_STOCK')) {

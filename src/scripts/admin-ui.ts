@@ -1,5 +1,5 @@
 const statusDestinations: Record<string, string> = {
-  enable_payment: 'AWAITING_PAYMENT', pay: 'PAID', pack: 'PACKING', ship: 'SHIPPED', cancel: 'CANCELLED',
+  enable_payment: 'PENDING_VERIFICATION', pay: 'PACKING', ship: 'SHIPPED', cancel: 'ARCHIVE',
 };
 
 async function save(control: HTMLButtonElement, message: HTMLElement, url: string, init: RequestInit) {
@@ -39,10 +39,11 @@ document.querySelectorAll<HTMLFormElement>('[data-product-form], [data-stock]').
     const data = new FormData(form);
     const button = form.querySelector<HTMLButtonElement>('button[type=submit]')!;
     const message = form.querySelector<HTMLElement>('[role=alert]')!;
-    const { stock: slug, previousStock, previousActive } = form.dataset;
+    const { stock: slug, previousStock, previousActive, previousPrice } = form.dataset;
     const init = slug ? {
       method: 'PATCH', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ slug, stock: Number(data.get('stock')), active: data.has('active'),
+        priceCents: Math.round(Number(data.get('price')) * 100), previousPriceCents: Number(previousPrice),
         previousStock: Number(previousStock), previousActive: previousActive === '1' }),
     } : { method: 'POST', body: data };
     if (await save(button, message, '/api/admin/products', init)) {

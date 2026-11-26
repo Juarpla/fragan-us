@@ -1,5 +1,5 @@
 ---
-import { ArrowLeft, ArrowRight, Copy } from '@lucide/astro';
+import { ArrowLeft, ArrowRight, Copy, Upload } from '@lucide/astro';
 import Base from '../../layouts/Base.astro';
 import { money } from '../../lib/catalog';
 import { checkoutMode, validCode } from '../../lib/http';
@@ -24,41 +24,37 @@ const deadline = payable && order.reserved_until ? new Date(order.reserved_until
 const deadlineLabel = deadline?.toLocaleTimeString('es-PE', { timeZone: 'America/Lima', hour: 'numeric', minute: '2-digit' });
 ---
 <Base title="Pagar pedido" minimal privatePage>
-  <section class="container inner-section" data-payment-page>
+  <section class="container inner-section payment-page" data-payment-page>
     {order && canSubmitReceipt(order, mode) ? <>
       <h1 class="inner-title">{payable ? 'Paga tus perfumes' : 'Envía tu comprobante'}</h1>
       <p class="inner-copy">Revisaremos tu pago antes de confirmar y preparar el pedido.</p>
       {order.is_demo === 1 && <p class="notice">Modo de prueba. Usa un comprobante ficticio.</p>}
-      <div class="panel">
-        <h2>Pago con Yape o Plin</h2>
-        <p class="notice" role="status" data-expired-payment hidden={payable}>La reserva venció. Si ya pagaste, adjunta el comprobante para que podamos revisar tu pedido. Si aún no pagaste, vuelve a la tienda para hacer un nuevo pedido.</p>
-        {deadlineLabel && <p class="notice" data-payment-deadline={deadline?.toISOString()}>Para conservar tu stock, paga y sube el comprobante antes de las {deadlineLabel} (hora de Perú).</p>}
-        <div class="payment-box">
-          <p class="order-freight"><span>Importe de los perfumes</span><strong>{money(order.total_cents)}</strong></p>
+      <div class="panel payment-panel">
+        <div class="payment-total"><div><h2>Pago con Yape o Plin</h2><p>Importe de los perfumes</p></div><strong>{money(order.total_cents)}</strong></div>
+        <p class="notice payment-alert" role="status" data-expired-payment hidden={payable}>La reserva venció. Si ya pagaste, adjunta el comprobante para que revisemos tu pedido. Si aún no pagaste, vuelve a la tienda para hacer un nuevo pedido.</p>
+        {deadlineLabel && <p class="notice payment-alert" data-payment-deadline={deadline?.toISOString()}>Paga y envía el comprobante antes de las {deadlineLabel} (hora de Perú) para conservar tu reserva.</p>}
+        <div class="payment-content">
           {payable && phone && <div class="payment-destination" data-payment-destination>
-            {showQR && qrHref && <a class="payment-qr" href={qrHref} target="_blank" rel="noopener noreferrer" aria-label="Abrir el QR de pago en tamaño completo">
-              <img src={qrHref} alt="Código QR de Yape para pagar a FraganUS" width="300" />
+            {showQR && qrHref && <a class="payment-qr" href={qrHref} target="_blank" rel="noopener noreferrer" aria-label="Abrir el QR de Yape en tamaño completo">
+              <img src={qrHref} alt="Código QR de Yape para pagar a FraganUS" width="240" />
             </a>}
             <button class="button secondary" type="button" data-copy={phone}><Copy size={16} aria-hidden="true" /> Copiar número de pago</button>
             <span role="status" data-copy-status></span>
           </div>}
+          <form class="payment-receipt" method="post" action="/api/orders/receipt" enctype="multipart/form-data" data-receipt-form>
+            <input type="hidden" name="code" value={order.order_code} />
+            <label class="payment-upload">
+              <span><Upload size={21} aria-hidden="true" /> Subir comprobante de pago</span>
+              <small id="receipt-format">JPG, PNG o WebP, hasta 8 MB.</small>
+              <input class="sr-only" type="file" name="receipt" accept="image/jpeg,image/png,image/webp" aria-describedby="receipt-format" required />
+            </label>
+            <p class="muted payment-file-name" data-file-name role="status"></p>
+            <button type="submit" class="button primary" data-send-receipt><span data-receipt-label>Enviar comprobante</span> <ArrowRight size={17} aria-hidden="true" /></button>
+            <p class="error-message" role="alert" data-receipt-error></p>
+          </form>
         </div>
-        <form method="post" action="/api/orders/receipt" enctype="multipart/form-data" data-receipt-form>
-          <input type="hidden" name="code" value={order.order_code} />
-          <div class="fields">
-            <div class="payment-options span-two" role="group" aria-label="Medio que usaste para pagar">
-              <label><input type="radio" name="payment" value="YAPE" required /> Yape</label>
-              <label><input type="radio" name="payment" value="PLIN" required /> Plin</label>
-            </div>
-            <label class="field span-two">Comprobante de pago<input type="file" name="receipt" accept="image/jpeg,image/png,image/webp" required /><span class="muted">JPG, PNG o WebP, hasta 8 MB.</span></label>
-          </div>
-          <div class="checkout-actions">
-            <button type="submit" class="button primary" data-send-receipt>Enviar comprobante <ArrowRight size={17} aria-hidden="true" /></button>
-            <a class="button secondary" href={`/gracias/${order.order_code}`}><ArrowLeft size={16} aria-hidden="true" /> Volver al pedido</a>
-          </div>
-          <p class="error-message" role="alert" data-receipt-error></p>
-        </form>
       </div>
+      <a class="button secondary payment-back" href={`/gracias/${order.order_code}`}><ArrowLeft size={16} aria-hidden="true" /> Volver al pedido</a>
     </> : <>
       <h1 class="inner-title">{order ? 'Consulta el estado de tu pedido' : 'Pedido no encontrado'}</h1>
       <p class="inner-copy">{order ? 'Revisa el enlace de tu pedido para saber cuál es el siguiente paso.' : 'Revisa el código en el enlace que recibiste.'}</p>
@@ -93,10 +89,17 @@ const deadlineLabel = deadline?.toLocaleTimeString('es-PE', { timeZone: 'America
 
   const form = document.querySelector<HTMLFormElement>('[data-receipt-form]');
   const submit = form?.querySelector<HTMLButtonElement>('[data-send-receipt]');
+  const submitLabel = submit?.querySelector<HTMLElement>('[data-receipt-label]');
   const message = form?.querySelector<HTMLElement>('[data-receipt-error]');
+  const file = form?.querySelector<HTMLInputElement>('input[type=file]');
+  const filename = form?.querySelector<HTMLElement>('[data-file-name]');
+  file?.addEventListener('change', () => {
+    if (filename) filename.textContent = file.files?.[0]?.name ?? '';
+    if (message) message.textContent = '';
+  });
   form?.addEventListener('submit', async event => {
     event.preventDefault();
-    if (!submit || !message || submit.disabled) return;
+    if (!submit || !submitLabel || !message || submit.disabled) return;
     const body = new FormData(form);
     const receipt = body.get('receipt');
     if (!(receipt instanceof File) || !receipt.size || receipt.size > 8 * 1024 * 1024) {
@@ -104,7 +107,7 @@ const deadlineLabel = deadline?.toLocaleTimeString('es-PE', { timeZone: 'America
       return;
     }
     submit.disabled = true;
-    submit.textContent = 'Enviando comprobante…';
+    submitLabel.textContent = 'Enviando comprobante…';
     message.textContent = '';
     try {
       const response = await fetch('/api/orders/receipt', { method: 'POST', body });
@@ -119,6 +122,6 @@ const deadlineLabel = deadline?.toLocaleTimeString('es-PE', { timeZone: 'America
       message.textContent = 'No pudimos registrar el comprobante. Intenta de nuevo.';
     }
     submit.disabled = false;
-    submit.textContent = 'Enviar comprobante';
+    submitLabel.textContent = 'Enviar comprobante';
   });
 </script>
