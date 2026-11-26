@@ -578,7 +578,12 @@ input[type=checkbox], input[type=radio] { accent-color: var(--purple); }
 @media (min-width: 761px) and (max-width: 920px) {
   .catalog-listing .product-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
-.fragrance-front { position: relative; width: 100%; }
+.product-visual, .detail-visual { isolation: isolate; }
+.fragrance-front { position: relative; width: 100%; background: inherit; }
+.fragrance-front img { filter: none; }
+.fragrance-front img:not(.fragrance-photo-cutout),
+.fragrance-reference > img:not(.fragrance-photo-cutout) { mix-blend-mode: multiply; }
+.fragrance-photo-cutout { mask: var(--fragrance-mask) center / contain no-repeat; }
 .detail-visual .fragrance-front { display: grid; place-items: center; height: 100%; }
 .detail-visual .fragrance-front > img { width: 76%; height: 83%; object-fit: contain; transition: transform .25s ease; }
 .detail-visual:hover .fragrance-front > img { transform: scale(1.035); }
@@ -587,7 +592,7 @@ input[type=checkbox], input[type=radio] { accent-color: var(--purple); }
 .fragrance-reference { position: absolute; inset: 0; overflow: hidden; display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 7px; padding: 12px 16px 32px; text-align: center; background: inherit; color: #362346; transform: rotateY(-180deg); }
 .has-inspiration[data-inspiration=reference] .fragrance-front { transform: rotateY(180deg); }
 .has-inspiration[data-inspiration=reference] .fragrance-reference { transform: rotateY(0); }
-.fragrance-reference > img, .detail-visual .fragrance-reference > img { display: block; width: min(58%, 200px); height: 62%; min-height: 0; object-fit: contain; filter: drop-shadow(5px 9px 9px #38264238); }
+.fragrance-reference > img, .detail-visual .fragrance-reference > img { display: block; width: min(58%, 200px); height: 62%; min-height: 0; object-fit: contain; filter: none; }
 .fragrance-reference strong { display: block; font: 650 clamp(.92rem, 1.25vw, 1.24rem)/1.16 var(--serif); overflow-wrap: anywhere; }
 .detail-visual .fragrance-reference strong { font-size: clamp(1.2rem, 2.8vw, 2.1rem); }
 .fragrance-switch {

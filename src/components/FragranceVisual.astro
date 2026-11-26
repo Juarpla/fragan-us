@@ -1,4 +1,5 @@
 ---
+import catalogPhotoMasks from '../data/catalog-photo-masks.json';
 import { productPhotoPlaceholder, type Product } from '../lib/catalog';
 
 interface Props {
@@ -8,18 +9,23 @@ interface Props {
 const { product, href } = Astro.props;
 const { name, brand, image_url, tone, badge, inspiration_name, inspiration_image_url } = product;
 const photoAlt = image_url === productPhotoPlaceholder ? 'Foto pendiente' : `Frasco de ${name} de ${brand}`;
+const masks: Readonly<Partial<Record<string, string>>> = catalogPhotoMasks;
+const photoMask = masks[image_url];
+const referenceMask = inspiration_image_url ? masks[inspiration_image_url] : undefined;
+const photoStyle = photoMask && { '--fragrance-mask': `url("${photoMask}")` };
+const referenceStyle = referenceMask && { '--fragrance-mask': `url("${referenceMask}")` };
 ---
 <div class:list={[href ? 'product-visual' : 'detail-visual', tone, inspiration_name && 'has-inspiration']} data-inspiration={inspiration_name ? 'product' : undefined}>
   <div class="fragrance-front" data-inspiration-front>
     {href ? <a class="product-image-link" href={href} aria-label={`Ver ${name} de ${brand}`}>
-      <img src={image_url} alt={photoAlt} width="480" height="480" loading="lazy" />
-    </a> : <img src={image_url} alt={photoAlt} width="480" height="480" fetchpriority="high" />}
+      <img class:list={[photoMask && 'fragrance-photo-cutout']} style={photoStyle} src={image_url} alt={photoAlt} width="480" height="480" loading="lazy" />
+    </a> : <img class:list={[photoMask && 'fragrance-photo-cutout']} style={photoStyle} src={image_url} alt={photoAlt} width="480" height="480" fetchpriority="high" />}
     {href && badge && <span class="product-badge">{badge}</span>}
   </div>
   {inspiration_name && <>
     <div class="fragrance-reference" data-inspiration-back inert aria-hidden="true">
       <strong>{inspiration_name}</strong>
-      {inspiration_image_url && <img src={inspiration_image_url} alt="" width="360" height="360" loading="lazy" />}
+      {inspiration_image_url && <img class:list={[referenceMask && 'fragrance-photo-cutout']} style={referenceStyle} src={inspiration_image_url} alt="" width="360" height="360" loading="lazy" />}
     </div>
     <button type="button" class="fragrance-switch" data-inspiration-toggle>
       <span class="fragrance-switch-label">
