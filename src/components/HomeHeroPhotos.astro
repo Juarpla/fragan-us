@@ -1,11 +1,9 @@
 ---
-import { ChevronLeft, ChevronRight, Pause, Play } from '@lucide/astro';
-
 const photos = [
   { src: '/brand/hero-perfumes.webp', alt: 'Odyssey Mandarin Sky, Khamrah y Hawas sobre piedra malva.', width: 1448, height: 1086 },
-  { src: '/brand/inicio/hawas-costa-verde.webp', alt: 'Un hombre se aplica Hawas con una Toyota 4Runner al fondo en la Costa Verde de Lima.', width: 1200, height: 960 },
-  { src: '/brand/inicio/club-de-nuit-costa-norte.webp', alt: 'Un hombre vestido de negro se aplica Club de Nuit junto a una Mazda frente a una playa del norte peruano.', width: 1200, height: 960 },
-  { src: '/brand/inicio/qahwa-ruta-andina.webp', alt: 'Una pareja comparte Khamrah Qahwa junto a una Hilux, entre una laguna turquesa y nevados andinos.', width: 1200, height: 960 },
+  { src: '/brand/inicio/hawas-costa-verde.webp', alt: 'Un hombre sostiene Hawas sentado en la puerta de una Toyota 4Runner, frente a la Costa Verde de Lima.', width: 1200, height: 900 },
+  { src: '/brand/inicio/club-de-nuit-costa-norte.webp', alt: 'Un hombre se aplica Club de Nuit en el antebrazo junto a una SUV Mazda en la costa norte peruana.', width: 1200, height: 960 },
+  { src: '/brand/inicio/qahwa-ruta-andina.webp', alt: 'Una pareja con Khamrah Qahwa se sienta en la compuerta de una Hilux frente a una laguna andina.', width: 1200, height: 960 },
 ];
 ---
 <div class="hero-photo" data-hero-photos>
@@ -14,119 +12,72 @@ const photos = [
       data-current={index === 0 || undefined} aria-hidden={index !== 0 ? 'true' : undefined}
       width={width} height={height} fetchpriority={index ? 'low' : 'high'} />
   ))}
-  <div class="hero-photo-controls" role="group" aria-label="Imágenes de inicio" hidden>
-    <button type="button" data-photo-step="-1" aria-label="Imagen anterior"><ChevronLeft size={18} aria-hidden="true" /></button>
-    <span data-photo-count aria-hidden="true">1 / {photos.length}</span>
-    <button type="button" data-photo-step="1" aria-label="Imagen siguiente"><ChevronRight size={18} aria-hidden="true" /></button>
-    <button type="button" data-photo-toggle aria-label="Pausar rotación">
-      <Pause size={16} aria-hidden="true" class="pause-icon" />
-      <Play size={16} aria-hidden="true" class="play-icon" />
-    </button>
-  </div>
-  <span class="sr-only" role="status" data-photo-status></span>
 </div>
+
 <style>
-  img { opacity: 0; transition: opacity .75s cubic-bezier(.3,.1,.25,1); }
-  img[data-current] { opacity: 1; }
-  .hero-photo-controls {
-    position: absolute;
-    z-index: 1;
-    inset-inline-end: clamp(10px, 2vw, 23px);
-    inset-block-end: clamp(10px, 2vw, 23px);
-    display: flex;
-    align-items: center;
-    border: 1px solid #f6eaff5c;
-    border-radius: 100px;
-    background: #251530e8;
-    color: #fff;
-  }
-  .hero-photo-controls[hidden] { display: none; }
-  button { display: grid; place-items: center; width: 44px; height: 44px; padding: 0; color: inherit; border-radius: 50%; }
-  button:hover { background: #fff2; }
-  button:focus-visible { outline: 2px solid #fff; outline-offset: -4px; }
-  [data-photo-count] { font-size: .75rem; font-weight: 700; font-variant-numeric: tabular-nums; }
-  [data-photo-toggle] { margin-inline-start: 2px; }
-  :global([data-hero-photos][data-paused]) .pause-icon, :global([data-hero-photos]:not([data-paused])) .play-icon { display: none; }
-  @media (prefers-reduced-motion: reduce) { img { transition: none; } }
+  .hero-photo { isolation: isolate; }
+  img { opacity: 0; }
+  img[data-previous] { z-index: 1; opacity: 1; }
+  img[data-current] { z-index: 2; opacity: 1; transition: opacity .75s cubic-bezier(.3,.1,.25,1); }
+  @media (prefers-reduced-motion: reduce) { img[data-current] { transition: none; } }
 </style>
+
 <script>
   const gallery = document.querySelector<HTMLElement>('[data-hero-photos]');
   if (gallery) {
     const photos = [...gallery.querySelectorAll('img')];
-    const controls = gallery.querySelector<HTMLElement>('.hero-photo-controls')!;
-    const toggle = gallery.querySelector<HTMLButtonElement>('[data-photo-toggle]')!;
-    const count = gallery.querySelector<HTMLElement>('[data-photo-count]')!;
-    const status = gallery.querySelector<HTMLElement>('[data-photo-status]')!;
     const motion = window.matchMedia('(prefers-reduced-motion: reduce)');
-    const hover = window.matchMedia('(hover: hover)');
-    let active = 0;
-    let timer: number | undefined;
-    let paused = motion.matches;
     let visible = !('IntersectionObserver' in window);
-    let hovering = false;
-    let focused = false;
-    let loading = false;
-    const advanceAfter = 7000;
+    let current = 0;
+    let upcoming = 1;
+    let previous: HTMLImageElement | undefined;
+    let timer: number | undefined;
+    let advancing = false;
 
-    async function prepare(photo: HTMLImageElement) {
-      if (photo.dataset.src && !photo.hasAttribute('src')) photo.src = photo.dataset.src;
-      await photo.decode();
-    }
+    const shouldRotate = () => visible && !document.hidden && !motion.matches;
 
     function schedule() {
       window.clearTimeout(timer);
-      if (paused || hovering || focused || !visible || document.hidden || loading) return;
-      void prepare(photos[(active + 1) % photos.length]).catch(() => {});
-      timer = window.setTimeout(() => void show(1), advanceAfter);
+      if (!shouldRotate() || advancing) return;
+      const next = photos[upcoming];
+      if (next.dataset.src && !next.hasAttribute('src')) next.src = next.dataset.src;
+      timer = window.setTimeout(() => void advance(), 7000);
     }
 
-    async function show(step: number, manual = false) {
-      if (loading) return;
-      window.clearTimeout(timer);
-      loading = true;
-      const next = (active + step + photos.length) % photos.length;
+    async function advance() {
+      const next = photos[upcoming];
+      advancing = true;
       try {
-        await prepare(photos[next]);
-        if (!manual && (paused || hovering || focused || !visible || document.hidden)) return;
-        photos[active].removeAttribute('data-current');
-        photos[active].setAttribute('aria-hidden', 'true');
-        photos[next].setAttribute('data-current', '');
-        photos[next].removeAttribute('aria-hidden');
-        active = next;
-        count.textContent = `${active + 1} / ${photos.length}`;
-        if (manual) status.textContent = `Imagen ${active + 1} de ${photos.length}. ${photos[active].alt}`;
+        await next.decode();
+        if (!shouldRotate()) return;
+        previous?.removeAttribute('data-previous');
+        previous = photos[current];
+        previous.setAttribute('data-previous', '');
+        previous.removeAttribute('data-current');
+        previous.setAttribute('aria-hidden', 'true');
+        next.setAttribute('data-current', '');
+        next.removeAttribute('aria-hidden');
+        current = upcoming;
       } catch {
-        if (manual) status.textContent = 'No pudimos cargar la imagen. Vuelve a intentarlo.';
+        // Leave the current photo visible if the next one fails to load.
       } finally {
-        loading = false;
+        if (shouldRotate() || current === upcoming) {
+          do { upcoming = (upcoming + 1) % photos.length; } while (upcoming === current);
+        }
+        advancing = false;
         schedule();
       }
     }
 
-    function setPaused(value: boolean) {
-      paused = value;
-      gallery!.toggleAttribute('data-paused', paused);
-      toggle.setAttribute('aria-label', paused ? 'Reproducir rotación' : 'Pausar rotación');
-      schedule();
-    }
-
-    controls.querySelectorAll<HTMLButtonElement>('[data-photo-step]').forEach(button => {
-      button.addEventListener('click', () => void show(Number(button.dataset.photoStep), true));
-    });
-    toggle.addEventListener('click', () => setPaused(!paused));
-    motion.addEventListener('change', () => setPaused(motion.matches));
+    motion.addEventListener('change', schedule);
     document.addEventListener('visibilitychange', schedule);
-    gallery.addEventListener('pointerenter', () => { hovering = hover.matches; schedule(); });
-    gallery.addEventListener('pointerleave', () => { hovering = false; schedule(); });
-    controls.addEventListener('focusin', () => { focused = true; schedule(); });
-    controls.addEventListener('focusout', event => {
-      focused = controls.contains(event.relatedTarget as Node | null);
-      schedule();
-    });
     if ('IntersectionObserver' in window) {
-      new IntersectionObserver(([entry]) => { visible = entry.isIntersecting; schedule(); }, { threshold: .25 }).observe(gallery);
+      new IntersectionObserver(([entry]) => {
+        visible = entry.intersectionRatio >= .25;
+        schedule();
+      }, { threshold: .25 }).observe(gallery);
+    } else {
+      schedule();
     }
-    setPaused(paused);
-    controls.hidden = false;
   }
 </script>
