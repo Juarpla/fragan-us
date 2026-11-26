@@ -19,6 +19,7 @@ const wa = (phone: string) => `https://wa.me/51${phone}`;
 <AdminLayout title="Bolsas pendientes" current="bolsas">
   <section class="panel admin-section" aria-labelledby="cart-list">
     <h2 id="cart-list">Bolsas pendientes</h2>
+    <p class="muted admin-cart-description">Aquí aparecen las bolsas de clientes que dejaron un celular válido y autorizaron el contacto por WhatsApp. Cuando crean el pedido y pasan al pago, su bolsa sale de esta lista.</p>
         {carts.length ? carts.map(cart => <article class="admin-record">
           <div><strong>{cart.customer_name || 'Cliente'} · {money(cart.total_cents)}</strong><p>+51 {cart.customer_phone}</p><p>{orderItems(cart.items_json).map(item => `${item.quantity} × ${item.name}`).join(', ')}</p><p class="muted">{adminDate(cart.updated_at)}</p></div>
           {storeEnv.DEMO_MODE !== 'true' && <a class="inline-link" href={wa(cart.customer_phone)} rel="noreferrer" target="_blank">Contactar por WhatsApp <ArrowUpRight size={15} /></a>}

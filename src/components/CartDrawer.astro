@@ -15,7 +15,7 @@ const inCheckout = Astro.url.pathname.replace(/\/$/, '') === '/checkout';
       <div class="drawer-total"><span>Total en productos</span><strong data-drawer-total></strong></div>
       <p>El transportista fija el costo del envío y te lo cobra por separado.</p>
       {inCheckout ? <><button class="button primary full-width" type="button" data-cart-continue>Volver a la compra <ArrowRight size={18} /></button><a class="button secondary full-width" href="/perfumes">Seguir comprando</a></> :
-        <><a href="/checkout" class="button primary full-width">Continuar compra <ArrowRight size={18} /></a><button class="button secondary full-width" type="button" data-cart-continue>Seguir comprando</button></>}
+        <><a href="/checkout" class="button primary full-width">Continuar con pago <ArrowRight size={18} aria-hidden="true" /></a><button class="button secondary full-width" type="button" data-cart-continue>Seguir comprando</button></>}
     </div>
   </div>
 </dialog>

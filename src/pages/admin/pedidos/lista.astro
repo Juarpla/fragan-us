@@ -1,0 +1,19 @@
+---
+import AdminOrderResults from '../../../components/AdminOrderResults.astro';
+import { loadAdminOrders } from '../../../lib/admin-orders';
+import { guardAdmin, isSameOrigin } from '../../../lib/http';
+import { storeEnv } from '../../../lib/runtime';
+
+export const partial = true;
+
+const denied = await guardAdmin(Astro.request, storeEnv);
+if (denied) return denied;
+Astro.response.headers.set('Cache-Control', 'private, no-store');
+Astro.response.headers.set('Referrer-Policy', 'same-origin');
+if (Astro.request.method === 'POST' && !isSameOrigin(Astro.request)) return new Response(null, { status: 403 });
+
+const db = storeEnv.DB;
+if (!db) return new Response('Base de datos no disponible.', { status: 503 });
+const results = await loadAdminOrders(db, Astro.request, Astro.url);
+---
+<AdminOrderResults {...results} />

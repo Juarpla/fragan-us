@@ -9,11 +9,11 @@ import { canSubmitReceipt, expireReservations, isPayable, orderItems, type Order
 import { storeEnv } from '../../lib/runtime';
 
 const code = Astro.params.code;
-type OrderStatus = Pick<OrderRow, 'order_code' | 'items_json' | 'total_cents' | 'status' | 'is_demo' | 'created_at' | 'receipt_submitted_at' | 'preparation_started_at' |
+type OrderStatus = Pick<OrderRow, 'order_code' | 'items_json' | 'total_cents' | 'status' | 'is_demo' | 'created_at' | 'preparation_started_at' |
   'shipped_at' | 'pickup_password' | 'shipping_receipt_key'>;
 const db = storeEnv.DB;
 const order = validCode(code) && db && await expireReservations(db).then(() => db.prepare(
-  `SELECT order_code, items_json, total_cents, status, is_demo, created_at, receipt_submitted_at, preparation_started_at,
+  `SELECT order_code, items_json, total_cents, status, is_demo, created_at, preparation_started_at,
     shipped_at, pickup_password, shipping_receipt_key FROM orders WHERE order_code = ?`,
 ).bind(code).first<OrderStatus>());
 if (!order) Astro.response.status = 404;

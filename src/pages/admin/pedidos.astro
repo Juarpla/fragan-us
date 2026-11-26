@@ -1,12 +1,11 @@
 ---
 import AdminLayout from '../../layouts/AdminLayout.astro';
-import { guardAdmin, isSameOrigin, shippingLabels } from '../../lib/http';
+import AdminOrderResults from '../../components/AdminOrderResults.astro';
+import { guardAdmin, isSameOrigin } from '../../lib/http';
 import { storeEnv } from '../../lib/runtime';
-import { Archive, ArrowUpRight, Copy, FileCheck, PackageCheck, Search, Truck } from '@lucide/astro';
-import { documentFormat } from '../../lib/checkout-document';
-import { money } from '../../lib/catalog';
-import { expireReservations, orderItems, orderStages, orderStatusLabel, type OrderRow } from '../../lib/orders';
-import { adminDate, orderWhatsApp } from '../../lib/admin-orders';
+import { Archive, FileCheck, PackageCheck, RefreshCw, Search, Truck } from '@lucide/astro';
+import { orderStages } from '../../lib/orders';
+import { loadAdminOrders } from '../../lib/admin-orders';
 
 const denied = await guardAdmin(Astro.request, storeEnv);
 if (denied) return denied;
@@ -15,41 +14,9 @@ Astro.response.headers.set('Referrer-Policy', 'same-origin');
 
 const db = storeEnv.DB;
 if (!db) return new Response('Base de datos no disponible.', { status: 503 });
-const selected = Astro.url.searchParams.get('estado');
-const stages = [...orderStages, { id: 'ARCHIVE', label: 'Solicitudes anteriores' }] as const;
-const legacyStates: Record<string, string> = { PAID: 'PACKING', PENDING_CONFIRMATION: 'ARCHIVE', CANCELLED: 'ARCHIVE' };
-const filter = stages.find(({ id }) => id === (legacyStates[selected ?? ''] ?? selected))?.id ?? 'PENDING_VERIFICATION';
-const conditions = {
-  PENDING_VERIFICATION: "status = 'PENDING_VERIFICATION'",
-  PACKING: "status IN ('PAID', 'PACKING')",
-  SHIPPED: "status = 'SHIPPED' AND (archive_at IS NULL OR archive_at > CURRENT_TIMESTAMP)",
-  ARCHIVE: "status IN ('PENDING_CONFIRMATION', 'CANCELLED') OR (status = 'SHIPPED' AND archive_at <= CURRENT_TIMESTAMP)",
-};
-
-let query = '';
-let pageValue = Astro.url.searchParams.get('p');
-if (Astro.request.method === 'POST') {
-  if (!isSameOrigin(Astro.request)) return new Response(null, { status: 403 });
-  const form = await Astro.request.formData().catch(() => null);
-  const input = form?.get('q');
-  query = typeof input === 'string' ? input.trim().slice(0, 90) : '';
-  pageValue = String(form?.get('p') ?? '');
-}
-const normalized = query.normalize('NFD').replace(/\p{M}/gu, '').toLowerCase();
-const foldedName = Object.entries({ á: 'a', é: 'e', í: 'i', ó: 'o', ú: 'u', ü: 'u', ñ: 'n' })
-  .reduce((expression, [letter, plain]) =>
-    `replace(replace(${expression}, '${letter}', '${plain}'), '${letter.toUpperCase()}', '${plain}')`, 'customer_name');
-const documentQuery = normalized.replace(/[ -]/g, '');
-const condition = !query ? conditions[filter]
-  : /^\d+$/.test(documentQuery) ? 'document_number = ?' : `instr(lower(${foldedName}), ?) > 0`;
-const terms = !query ? [] : [/^\d+$/.test(documentQuery) ? documentQuery : normalized];
-const page = Math.max(1, Math.min(5000, Math.floor(Number(pageValue) || 1)));
-const limit = 25;
-await expireReservations(db);
-const orderResult = await db.prepare(`SELECT * FROM orders WHERE ${condition}
-    ORDER BY COALESCE(shipped_at, created_at) DESC, order_code DESC LIMIT ? OFFSET ?`)
-  .bind(...terms, limit + 1, (page - 1) * limit).all<OrderRow>();
-const orders = orderResult.results.slice(0, limit);
+if (Astro.request.method === 'POST' && !isSameOrigin(Astro.request)) return new Response(null, { status: 403 });
+const resultsProps = await loadAdminOrders(db, Astro.request, Astro.url);
+const { filter, query, label } = resultsProps;
 const stageIcons = [FileCheck, PackageCheck, Truck];
 ---
 <AdminLayout title="Pedidos" current="pedidos">
@@ -65,9 +32,12 @@ const stageIcons = [FileCheck, PackageCheck, Truck];
       </ol>
       <a class="admin-archive" href="/admin/pedidos?estado=ARCHIVE#order-list" aria-current={filter === 'ARCHIVE' ? 'page' : undefined}><Archive size={18} aria-hidden="true" /> Solicitudes anteriores</a>
     </nav>
-    <section class="panel admin-section" aria-labelledby="order-list">
+    <section class="panel admin-section" aria-labelledby="order-list" data-admin-orders>
       <div class="admin-orders-heading">
-        <div><h2 id="order-list">Pedidos</h2><p class="muted">{query ? 'Resultados en todas las etapas' : stages.find(stage => stage.id === filter)?.label}</p></div>
+        <div class="admin-orders-context">
+          <div><h2 id="order-list" tabindex="-1">Pedidos</h2><p class="muted">{query ? 'Resultados en todas las etapas' : label}</p></div>
+          <button type="button" class="button secondary admin-refresh" data-order-refresh hidden><RefreshCw size={16} aria-hidden="true" /> Actualizar pedidos</button>
+        </div>
         <form id="order-search" class="admin-order-search" method="post" action={`/admin/pedidos?estado=${filter}`}>
           <label class="field" for="customer-search">Buscar pedidos</label>
           <div><input id="customer-search" name="q" type="search" value={query} maxlength="90" autocomplete="off" placeholder="Nombre, DNI o carné" required />
@@ -76,69 +46,12 @@ const stageIcons = [FileCheck, PackageCheck, Truck];
         </form>
       </div>
 
-      {orders.length ? orders.map(order => {
-        const whatsApp = orderWhatsApp(order, Astro.url.origin);
-        const documentLabel = documentFormat(order.document_type)?.label ?? 'Documento';
-        const dispatchData = [
-          `Cliente: ${order.customer_name}`,
-          `Celular: +51 ${order.customer_phone}`,
-          `${documentLabel}: ${order.document_number ?? 'Sin registrar'}`,
-          `Destino: ${order.shipping_address ? `${order.shipping_method === 'SHALOM' ? 'Shalom · ' : ''}${order.shipping_address}` : order.city}`,
-        ].join('\n');
-        return <article class="admin-record admin-order" data-copy-region>
-          <header class="admin-order-heading">
-            <div><h3>{order.order_code}</h3><p class="muted">{adminDate(order.created_at)}{order.is_demo === 1 && ' · Prueba'}</p></div>
-            <div><strong>{money(order.total_cents)}</strong>{order.payment_method && <p class="muted">{order.payment_method}</p>}</div>
-          </header>
-          <div class="admin-order-details">
-            <div><h4>Cliente</h4><p>{order.customer_name} · +51 {order.customer_phone}</p><p class="muted">{documentLabel} · {order.document_number ?? 'Sin registrar'}</p>
-              {order.whatsapp_offers === 1 && <p class="muted">Aceptó recibir actualizaciones por WhatsApp.</p>}</div>
-            <div><h4>Perfumes</h4><ul>{orderItems(order.items_json).map(item => <li>{item.quantity} × {item.name}</li>)}</ul></div>
-            <div class="admin-order-destination"><h4>Destino</h4><p>{order.city} · {shippingLabels[order.shipping_method]}</p><p class="muted">{order.shipping_address}</p></div>
-          </div>
-          {(query || filter === 'ARCHIVE') && <p class="admin-order-note">{orderStatusLabel[order.status]}</p>}
-          {order.status === 'PENDING_VERIFICATION' && order.stock_reserved === 0 && <p class="notice admin-order-note">Comprueba el stock antes de confirmar el pago.</p>}
-          <div class="admin-record-actions">
-            {order.status === 'PENDING_CONFIRMATION' && <button class="button primary" data-order={order.order_code} data-action="enable_payment">Habilitar pago</button>}
-            {order.status === 'PENDING_VERIFICATION' && <button class="button primary" data-order={order.order_code} data-action="pay">Confirmar pago</button>}
-            {order.status === 'SHIPPED' && order.shipping_receipt_key && <a class="button secondary" href={`/admin/comprobante/${order.order_code}`}>Ver comprobante de envío</a>}
-            {order.status !== 'SHIPPED' && order.receipt_r2_key && <a class="button secondary" href={`/api/admin/receipt?code=${order.order_code}`} rel="noreferrer" target="_blank">Ver comprobante de pago</a>}
-            {['PAID', 'PACKING', 'SHIPPED'].includes(order.status) && <button class="button secondary" type="button" data-copy-value={dispatchData} data-copy-success="Datos de envío copiados."><Copy size={16} aria-hidden="true" /> Copiar datos de envío</button>}
-            {order.is_demo !== 1 && <a class="button secondary" href={whatsApp.href} rel="noreferrer" target="_blank">{whatsApp.label} <ArrowUpRight size={15} aria-hidden="true" /></a>}
-            {['PENDING_CONFIRMATION', 'PENDING_VERIFICATION'].includes(order.status) && <button class="button secondary" data-order={order.order_code} data-action="cancel">Cancelar pedido</button>}
-          </div>
-          <p class="error-message" role="alert"></p>
-          <p class="muted admin-copy-status" role="status" data-copy-message></p>
-          <textarea class="admin-copy-fallback" aria-label="Datos de envío para copiar" data-copy-fallback readonly hidden></textarea>
-          {['PAID', 'PACKING', 'SHIPPED'].includes(order.status) && <details class="admin-editor admin-dispatch">
-            <summary><Truck size={18} aria-hidden="true" /> {order.status === 'SHIPPED' ? 'Editar datos de envío' : 'Registrar envío'}</summary>
-            <form data-dispatch-form class="admin-editor-form" action="/api/admin/dispatch" method="post" enctype="multipart/form-data">
-              <input type="hidden" name="code" value={order.order_code} />
-              <input type="hidden" name="previousReceipt" value={order.shipping_receipt_key ?? ''} />
-              <input type="hidden" name="previousPassword" value={order.pickup_password ?? ''} />
-              <label class="field">Comprobante del transportista
-                <input name="receipt" type="file" accept="application/pdf,image/jpeg,image/png,image/webp" required={!order.shipping_receipt_key} />
-                <span class="muted">PDF, JPG, PNG o WebP, hasta 8 MB.</span>
-              </label>
-              <label class="field">Clave de recojo
-                <input name="password" maxlength="80" value={order.pickup_password ?? ''} autocomplete="off" required />
-              </label>
-              <div class="admin-editor-actions">
-                {order.shipping_receipt_key && <a class="button secondary" href={`/api/orders/shipping-receipt?code=${order.order_code}`} download>Descargar comprobante actual</a>}
-                <button class="button primary" type="submit">{order.status === 'SHIPPED' ? 'Guardar datos de envío' : 'Marcar como enviado'}</button>
-              </div>
-              <p class="error-message" role="alert"></p>
-            </form>
-          </details>}
-        </article>;
-      }) : <p class="admin-empty">{query ? 'No se encontraron pedidos con estos datos.' : filter === 'ARCHIVE' ? 'Aún no hay pedidos en el historial.' : 'No hay pedidos en esta etapa.'}</p>}
-      {(page > 1 || orderResult.results.length > limit) && <nav class="checkout-actions" aria-label="Páginas de pedidos">
-        {page > 1 && (query ? <button class="button secondary" type="submit" form="order-search" name="p" value={page - 1}>Anterior</button> : <a class="button secondary" href={`/admin/pedidos?estado=${filter}&p=${page - 1}#order-list`}>Anterior</a>)}
-        {orderResult.results.length > limit && (query ? <button class="button secondary" type="submit" form="order-search" name="p" value={page + 1}>Siguiente</button> : <a class="button secondary" href={`/admin/pedidos?estado=${filter}&p=${page + 1}#order-list`}>Siguiente</a>)}
-      </nav>}
+      <p class="muted admin-refresh-status" role="status" data-order-feedback></p>
+      <AdminOrderResults {...resultsProps} />
     </section>
   </div>
 </AdminLayout>
 <script>
   import '../../scripts/clipboard-value';
+  import '../../scripts/admin-orders-ui';
 </script>

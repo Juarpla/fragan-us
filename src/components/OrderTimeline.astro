@@ -2,12 +2,12 @@
 import { Check, ClipboardCheck, CreditCard, Package, Truck } from '@lucide/astro';
 import type { OrderRow } from '../lib/orders';
 
-type Props = { order: Pick<OrderRow, 'status' | 'created_at' | 'receipt_submitted_at' | 'preparation_started_at' | 'shipped_at'> };
+type Props = { order: Pick<OrderRow, 'status' | 'created_at' | 'preparation_started_at' | 'shipped_at'> };
 const { order } = Astro.props;
 const active = order.status === 'SHIPPED' ? 3 : ['PAID', 'PACKING'].includes(order.status) ? 2 : order.status === 'PENDING_VERIFICATION' ? 1 : 0;
 const steps = [
   { label: 'Pedido creado', Icon: CreditCard, timestamp: order.created_at },
-  { label: 'Confirmación', Icon: ClipboardCheck, timestamp: order.receipt_submitted_at },
+  { label: 'Confirmación', Icon: ClipboardCheck, timestamp: active >= 2 ? order.preparation_started_at : null },
   { label: 'En preparación', Icon: Package, timestamp: order.preparation_started_at },
   { label: 'Enviado', Icon: Truck, timestamp: order.shipped_at },
 ];

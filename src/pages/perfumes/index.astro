@@ -16,10 +16,10 @@ if (page !== requestedPage) return Astro.redirect(catalogHref(filters, query, pa
 const start = (page - 1) * pageSize;
 const filterIcons = { calido: Sun, fresco: Snowflake, diario: Wind, noche: MoonStar };
 ---
-<Base title="Perfumes árabes">
+<Base title="Perfumes">
   <section class="container catalog-section catalog-page" id="catalogo" aria-labelledby="catalog-title">
     <div class="catalog-intro">
-      <h1 id="catalog-title" class="inner-title">Perfumes árabes</h1>
+      <h1 id="catalog-title" class="inner-title">Perfumes</h1>
       <p>Combina clima, ocasión y preferencia para encontrar tu próxima fragancia.</p>
     </div>
     <div class="catalog-layout" data-catalog-results>

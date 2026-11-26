@@ -1,8 +1,4 @@
-const statusDestinations: Record<string, string> = {
-  enable_payment: 'PENDING_VERIFICATION', pay: 'PACKING', cancel: 'ARCHIVE',
-};
-
-async function save(control: HTMLButtonElement, message: HTMLElement, url: string, init: RequestInit) {
+export async function save(control: HTMLButtonElement, message: HTMLElement, url: string, init: RequestInit) {
   control.disabled = true;
   message.textContent = '';
   try {
@@ -17,21 +13,6 @@ async function save(control: HTMLButtonElement, message: HTMLElement, url: strin
     return false;
   }
 }
-
-document.querySelectorAll<HTMLButtonElement>('[data-order]').forEach(button => {
-  button.addEventListener('click', async () => {
-    const { order: code, action } = button.dataset;
-    if (!action || (action === 'cancel' && !window.confirm('¿Cancelar este pedido?'))) return;
-    const record = button.closest('article')!;
-    const others = [...record.querySelectorAll('button')].filter(control => control !== button);
-    others.forEach(control => { control.disabled = true; });
-    const saved = await save(button, record.querySelector('[role=alert]')!, '/api/orders/verify', {
-      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ code, action }),
-    });
-    if (saved) location.assign(`/admin/pedidos?estado=${statusDestinations[action]}#order-list`);
-    else others.forEach(control => { control.disabled = false; });
-  });
-});
 
 document.querySelectorAll<HTMLFormElement>('[data-product-form], [data-stock]').forEach(form => {
   form.addEventListener('submit', async event => {
@@ -53,23 +34,18 @@ document.querySelectorAll<HTMLFormElement>('[data-product-form], [data-stock]').
   });
 });
 
-document.querySelectorAll<HTMLFormElement>('[data-dispatch-form], [data-inspiration-form]').forEach(form => {
+document.querySelectorAll<HTMLFormElement>('[data-inspiration-form]').forEach(form => {
   form.addEventListener('submit', async event => {
     event.preventDefault();
-    const dispatch = form.hasAttribute('data-dispatch-form');
     const button = form.querySelector<HTMLButtonElement>('button[type=submit]')!;
     const message = form.querySelector<HTMLElement>('[role=alert]')!;
     if (button.disabled) return;
-    const saved = await save(button, message, dispatch ? '/api/admin/dispatch' : '/api/admin/inspiration', {
+    const saved = await save(button, message, '/api/admin/inspiration', {
       method: 'POST', body: new FormData(form),
     });
     if (!saved) return;
-    sessionStorage.setItem('fraganus:admin-feedback', dispatch ? 'Datos de envío guardados.' : 'Inspiración guardada.');
-    if (dispatch && !['SHIPPED', 'ARCHIVE'].includes(new URLSearchParams(location.search).get('estado') ?? '')) {
-      location.assign('/admin/pedidos?estado=SHIPPED#order-list');
-    } else {
-      if (!dispatch) location.assign('/admin/catalogo#stock');
-    }
+    sessionStorage.setItem('fraganus:admin-feedback', 'Inspiración guardada.');
+    location.assign('/admin/catalogo#stock');
   });
 });
 

@@ -22,8 +22,14 @@ const featured = [...curated, ...products.filter(product => !highlights.has(prod
 <Base>
   <section class="hero container" aria-labelledby="hero-title">
     <div class="hero-copy">
-      <h1 id="hero-title">El perfume es<br /><em>parte de ti.</em></h1>
-      <p>Descubre perfumes árabes importados que van con tu estilo, tu clima y tus planes.</p>
+      <h1 id="hero-title">El perfume es <span class="sr-only">parte de ti.</span>
+        <em class="hero-phrase" aria-hidden="true">
+          <span>parte de ti.</span>
+          <span>tu nota final.</span>
+          <span>tu sello único.</span>
+        </em>
+      </h1>
+      <p>Descubre perfumes importados que van con tu estilo, tu clima y tus planes.</p>
       <div class="hero-actions">
         <a class="button primary" href={catalogHref()}>Explorar perfumes <ArrowRight size={19} aria-hidden="true" /></a>
         <a class="button secondary" href="/perfumes#climas">Elegir por clima <ArrowDown size={17} aria-hidden="true" /></a>

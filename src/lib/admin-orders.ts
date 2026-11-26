@@ -1,5 +1,5 @@
 import { money } from './catalog';
-import type { OrderRow } from './orders';
+import { expireReservations, orderStages, type OrderRow } from './orders';
 
 const dateFormat = new Intl.DateTimeFormat('es-PE', { dateStyle: 'medium', timeStyle: 'short', timeZone: 'America/Lima' });
 
@@ -27,5 +27,43 @@ export function orderWhatsApp(order: OrderRow, origin: string) {
     },
   };
   const action = actions[order.status === 'PAID' ? 'PACKING' : order.status];
-  return action ? { label: action.label, href: `${href}?text=${encodeURIComponent(action.message)}` } : { label: 'WhatsApp', href };
+  return action ? { label: action.label, href: `${href}?text=${encodeURIComponent(action.message)}` } : { label: 'Contactar cliente', href };
+}
+
+export async function loadAdminOrders(db: D1Database, request: Request, url: URL) {
+  const selected = url.searchParams.get('estado');
+  const stages = [...orderStages, { id: 'ARCHIVE', label: 'Solicitudes anteriores' }] as const;
+  const legacyStates: Record<string, string> = { PAID: 'PACKING', PENDING_CONFIRMATION: 'ARCHIVE', CANCELLED: 'ARCHIVE' };
+  const filter = stages.find(({ id }) => id === (legacyStates[selected ?? ''] ?? selected))?.id ?? 'PENDING_VERIFICATION';
+  const conditions = {
+    PENDING_VERIFICATION: "status = 'PENDING_VERIFICATION'",
+    PACKING: "status IN ('PAID', 'PACKING')",
+    SHIPPED: "status = 'SHIPPED' AND (archive_at IS NULL OR archive_at > CURRENT_TIMESTAMP)",
+    ARCHIVE: "status IN ('PENDING_CONFIRMATION', 'CANCELLED') OR (status = 'SHIPPED' AND archive_at <= CURRENT_TIMESTAMP)",
+  };
+
+  let query = '';
+  let pageValue = url.searchParams.get('p');
+  if (request.method === 'POST') {
+    const form = await request.formData().catch(() => null);
+    const input = form?.get('q');
+    query = typeof input === 'string' ? input.trim().slice(0, 90) : '';
+    pageValue = String(form?.get('p') ?? '');
+  }
+  const normalized = query.normalize('NFD').replace(/\p{M}/gu, '').toLowerCase();
+  const foldedName = Object.entries({ á: 'a', é: 'e', í: 'i', ó: 'o', ú: 'u', ü: 'u', ñ: 'n' })
+    .reduce((expression, [letter, plain]) =>
+      `replace(replace(${expression}, '${letter}', '${plain}'), '${letter.toUpperCase()}', '${plain}')`, 'customer_name');
+  const documentQuery = normalized.replace(/[ -]/g, '');
+  const condition = !query ? conditions[filter]
+    : /^\d+$/.test(documentQuery) ? 'document_number = ?' : `instr(lower(${foldedName}), ?) > 0`;
+  const terms = !query ? [] : [/^\d+$/.test(documentQuery) ? documentQuery : normalized];
+  const page = Math.max(1, Math.min(5000, Math.floor(Number(pageValue) || 1)));
+  const limit = 25;
+  await expireReservations(db);
+  const orderResult = await db.prepare(`SELECT * FROM orders WHERE ${condition}
+      ORDER BY COALESCE(shipped_at, created_at) DESC, order_code DESC LIMIT ? OFFSET ?`)
+    .bind(...terms, limit + 1, (page - 1) * limit).all<OrderRow>();
+  const orders = orderResult.results.slice(0, limit);
+  return { orders, filter, query, page, hasNext: orderResult.results.length > limit, label: stages.find(stage => stage.id === filter)?.label };
 }

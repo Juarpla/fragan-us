@@ -7,7 +7,7 @@ import { storeEnv } from '../lib/runtime';
 import '../styles/global.css';
 
 interface Props { title?: string; description?: string; minimal?: boolean; privatePage?: boolean; showCart?: boolean; }
-const { title, description = 'Descubre perfumes árabes en Perú y elige tu próxima fragancia según el clima y la ocasión.', minimal = false, privatePage = false, showCart = !minimal } = Astro.props;
+const { title, description = 'Descubre perfumes importados en Perú y elige tu próxima fragancia según el clima y la ocasión.', minimal = false, privatePage = false, showCart = !minimal } = Astro.props;
 const preview = storeEnv.STOREFRONT_PREVIEW === 'true';
 ---
 <!doctype html>
@@ -22,7 +22,7 @@ const preview = storeEnv.STOREFRONT_PREVIEW === 'true';
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;650;700;750;800&family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;1,500;1,600&display=swap" rel="stylesheet" />
-    <title>{title ? `${title} | FraganUS` : 'FraganUS | Perfumes árabes en Perú'}</title>
+    <title>{title ? `${title} | FraganUS` : 'FraganUS | Perfumes importados en Perú'}</title>
   </head>
   <body>
     <a class="skip-link" href="#contenido">Saltar al contenido</a>
@@ -46,4 +46,5 @@ const preview = storeEnv.STOREFRONT_PREVIEW === 'true';
 
 <script>
   import '../scripts/fragrance-visual';
+  import '../scripts/storefront-motion';
 </script>
