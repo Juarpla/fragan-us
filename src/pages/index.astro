@@ -6,11 +6,13 @@ import HomeHeroPhotos from '../components/HomeHeroPhotos.astro';
 import HomeSupport from '../components/HomeSupport.astro';
 import { catalogHref, catalogSelection } from '../lib/catalog-filters';
 import { getCatalog } from '../lib/db';
+import { selectFeaturedProducts } from '../lib/featured-products';
 import { storeEnv } from '../lib/runtime';
 
 const { query, filters, page } = catalogSelection(Astro.url.searchParams);
 if (query || filters.length || page > 1) return Astro.redirect(catalogHref(filters, query, page), 302);
 
+Astro.response.headers.set('Cache-Control', 'no-cache');
 const products = await getCatalog(storeEnv);
 const highlights = new Map([
   ['khamrah', 'Canela y dátiles'],
@@ -18,8 +20,7 @@ const highlights = new Map([
   ['asad', 'Para noches frescas'],
   ['qaed-al-fursan', 'Piña sobre maderas'],
 ]);
-const curated = [...highlights.keys()].flatMap(slug => products.find(product => product.slug === slug) ?? []);
-const featured = [...curated, ...products.filter(product => !highlights.has(product.slug))].slice(0, 4);
+const featured = selectFeaturedProducts(products);
 const heroPhrases = ['parte de ti.', 'tu nota final.', 'tu sello único.', 'tu firma.', 'tu ritual.', 'pura actitud.', 'una huella.'];
 ---
 <Base>
