@@ -1,5 +1,5 @@
 ---
-import { ArrowRight, ChevronRight, ExternalLink, Heart, Layers, ShoppingBag, SprayCan } from '@lucide/astro';
+import { ArrowRight, ChevronRight, ExternalLink, Heart, Layers, Share2, ShoppingBag, SprayCan } from '@lucide/astro';
 import FragranceVisual from '../../components/FragranceVisual.astro';
 import Base from '../../layouts/Base.astro';
 import TikTok from '../../components/icons/TikTok.astro';
@@ -30,7 +30,14 @@ const related = products.filter(item => item.slug !== product?.slug).slice(0, 4)
     <section class="detail-layout" aria-labelledby="product-title">
       <FragranceVisual product={product} />
       <div class="detail-info">
-        <h1 id="product-title">{product.name}</h1>
+        <div class="detail-heading">
+          <h1 id="product-title">{product.name}</h1>
+          <button class="button share-perfume" type="button" data-share-perfume={`${product.name} de ${product.brand} | FraganUS`} hidden>
+            <Share2 size={17} aria-hidden="true" /> Compartir
+          </button>
+        </div>
+        <div class="share-status" role="status" data-share-status></div>
+        <input class="share-url" type="url" aria-label="Enlace del perfume" data-share-url readonly hidden />
         <p class="detail-identity">{[product.brand, product.audience].filter(Boolean).join(' · ')}</p>
         {specs && <p>{specs}</p>}
         <strong class="detail-price">{money(product.price_cents)}</strong>
@@ -63,6 +70,39 @@ const related = products.filter(item => item.slug !== product?.slug).slice(0, 4)
 </Base>
 
 <script>
+  import { copyValue } from '../../scripts/clipboard-value';
+
+  const shareButton = document.querySelector<HTMLButtonElement>('[data-share-perfume]');
+  const shareStatus = document.querySelector<HTMLElement>('[data-share-status]');
+  const shareUrl = document.querySelector<HTMLInputElement>('[data-share-url]');
+
+  if (shareButton && shareStatus && shareUrl) {
+    const title = shareButton.dataset.sharePerfume;
+    const url = new URL(location.pathname, location.origin).href;
+    const shareData = { title, url };
+    let sharing = false;
+
+    shareButton.hidden = false;
+    shareButton.addEventListener('click', async () => {
+      if (sharing) return;
+      sharing = true;
+      try {
+        if (typeof navigator.share === 'function' && navigator.canShare?.(shareData) !== false) {
+          try {
+            await navigator.share(shareData);
+            return;
+          } catch (error) {
+            if (error instanceof DOMException && error.name === 'AbortError') return;
+          }
+        }
+
+        await copyValue(url, shareStatus, shareUrl, 'Enlace copiado.');
+      } finally {
+        sharing = false;
+      }
+    });
+  }
+
   const appLink = document.querySelector<HTMLAnchorElement>('[data-tiktok-search]');
   const webLink = document.querySelector<HTMLAnchorElement>('.reviews-web');
   const query = appLink?.dataset.tiktokSearch;
@@ -82,6 +122,36 @@ const related = products.filter(item => item.slug !== product?.slug).slice(0, 4)
 </script>
 
 <style>
+  .detail-heading {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+  }
+
+  .detail-heading h1 { min-width: 0; overflow-wrap: anywhere; }
+
+  .share-perfume {
+    flex: none;
+    padding-inline: 10px;
+    color: var(--purple-deep);
+    background: transparent;
+  }
+
+  .share-perfume:hover { background: #f0e8f8; }
+
+  .share-status { color: var(--purple-deep); font-size: .8rem; }
+  .share-url {
+    width: 100%;
+    min-height: 44px;
+    margin-block: 4px 10px;
+    padding: 8px 10px;
+    border: 1px solid var(--line);
+    border-radius: 9px;
+    background: #fff;
+    font: inherit;
+  }
+
   .reviews-web {
     display: inline-flex;
     align-items: center;
