@@ -5,13 +5,14 @@
   "type": "module",
   "scripts": {
     "dev": "astro dev",
-    "build": "astro build",
+    "build": "npm run guides:check && astro build",
     "check": "astro check",
     "db:local": "wrangler d1 execute fraganus-db --local --file=./schema.sql && npm run db:upgrade:local",
     "db:seed": "wrangler d1 execute fraganus-db --local --file=./seed.sql",
     "preview": "wrangler dev",
     "deploy": "npm run build && wrangler deploy",
-    "db:upgrade:local": "wrangler d1 migrations apply fraganus-db --local"
+    "db:upgrade:local": "wrangler d1 migrations apply fraganus-db --local",
+    "guides:check": "node scripts/prepare-guides.mjs"
   },
   "dependencies": {
     "@astrojs/cloudflare": "^14.4.9",

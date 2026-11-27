@@ -1,0 +1,141 @@
+{
+  "slug": "origen-fragancias-mas-vendidas",
+  "title": "¿De dónde vienen las fragancias más vendidas?",
+  "description": "De París a Calabria, Marruecos y Milán. Sigue el origen de las casas y los ingredientes detrás de algunas fragancias que lideraron las ventas en 2025.",
+  "cover_key": "atlas-origenes-v1",
+  "cover_alt": "Frasco de perfume ámbar sobre un mapa antiguo, junto a una rama de bergamota",
+  "published_on": "2026-11-27",
+  "content": {
+    "mapView": [
+      166,
+      32,
+      38,
+      33
+    ],
+    "chapters": [
+      {
+        "id": "paris",
+        "place": "París, Francia",
+        "heading": "Dónde nace una casa",
+        "point": [
+          2.35,
+          48.86
+        ],
+        "label": "París",
+        "body": [
+          "Cuando alguien dice que un perfume viene de Francia, puede estar hablando de la casa que lo comercializa, del lugar donde se fabrica o del origen de una materia prima. Esas tres pistas responden a preguntas diferentes. El nombre impreso en el frasco cuenta una parte del viaje y la fórmula puede llevarnos mucho más lejos.",
+          "Para entender la relación entre origen y ventas, empezamos en París. Dior sitúa el nacimiento de su casa en el 30 de la avenida Montaigne. Décadas después, Sauvage aparece en los resultados de 2025 de su grupo, LVMH, como la fragancia masculina más vendida en el mundo. El periodo y la categoría son tan importantes como el nombre.",
+          "El dato habla del desempeño comercial de la línea. Si la ves en una vitrina con diferentes concentraciones, tendrás que seguir leyendo la etiqueta para saber qué versión tienes enfrente. Una afirmación sobre una familia de productos no equivale a un dato separado para cada frasco, concentración o tamaño.",
+          "París es la primera parada porque aquí se entiende el origen de la casa. En la siguiente cambiamos de escala y miramos un ingrediente de una versión concreta. Ese giro permite leer dos historias de Sauvage sin confundir la geografía de la marca con la del perfume que pruebas."
+        ],
+        "sources": [
+          "dior-paris",
+          "lvmh"
+        ]
+      },
+      {
+        "id": "calabria",
+        "place": "Reggio de Calabria, Italia",
+        "heading": "La bergamota de Sauvage",
+        "point": [
+          15.65,
+          38.11
+        ],
+        "label": "Calabria",
+        "body": [
+          "En la ficha de Sauvage Eau de Toilette, Dior destaca la bergamota de Reggio de Calabria, al sur de Italia. La casa describe el trabajo del perfumista François Demachy con productores locales para obtener una faceta cítrica, jugosa y ligeramente especiada. Es una pista sobre la apertura de esa presentación, la primera impresión que propone en piel.",
+          "Al leer una lista de notas, conviene separar lo que la casa describe como un olor de lo que identifica como una materia prima con origen. Una nota puede explicar el efecto que se buscó en la mezcla. La referencia a una región concreta permite afirmar algo más preciso, siempre dentro de lo que la ficha realmente detalla.",
+          "La lección se vuelve práctica al comparar dos versiones de la misma línea. Busca el nombre completo, fíjate en la concentración y comprueba qué destaca la marca para cada una. Si ambas dicen Sauvage, la mención de Calabria en una de las fichas no basta para atribuir el mismo origen a todos los ingredientes de la otra.",
+          "También ayuda probar en momentos distintos. Anota la primera impresión y vuelve a oler cuando se haya asentado en piel. La pista cítrica de la apertura y la sensación que queda después pueden servir para comparar versiones mejor que la coincidencia de sus nombres."
+        ],
+        "image": {
+          "key": "bergamota-calabria-v1",
+          "alt": "Ilustración de un fruto de bergamota en un huerto frente a la costa de Calabria"
+        },
+        "sources": [
+          "dior-sauvage"
+        ]
+      },
+      {
+        "id": "marruecos",
+        "place": "Marruecos",
+        "heading": "Libre cruza el Mediterráneo",
+        "point": [
+          -6.5,
+          32.5
+        ],
+        "label": "Marruecos",
+        "body": [
+          "Libre, de Yves Saint Laurent, ofrece otra forma de hacer el recorrido. Su ficha de Eau de Parfum presenta dos ingredientes de distinta procedencia, el azahar de Marruecos y la lavanda de Francia. La marca cuenta la fragancia desde ese contraste. Dos países pueden aparecer en la historia de un mismo perfume por el origen de sus materias primas.",
+          "El azahar es la flor del naranjo. Aquí importa el modo en que la casa lo coloca junto a la lavanda en su descripción. Esa pareja permite imaginar la dirección floral y aromática de la composición, aunque una nota destacada por la marca no revela por sí sola cuánto se percibe o cómo evoluciona sobre cada piel.",
+          "Libre aparece además en los resultados anuales de L’Oréal de 2025. L’Oréal Luxe destaca a Libre, La Vie Est Belle de Lancôme y Paradoxe de Prada como el grupo que ocupa las tres primeras posiciones de fragancias femeninas descritas en su informe. Citamos ese grupo con el alcance de la fuente, sin asignar una posición individual que el comunicado no detalla.",
+          "Al juntar el perfil del perfume con el dato comercial, podemos hacer una lectura útil. El informe explica por qué Libre entra en esta guía. La ficha de la casa explica por qué Marruecos aparece en el mapa. Cada fuente aporta una pieza distinta de la respuesta."
+        ],
+        "image": {
+          "key": "azahar-marruecos-v1",
+          "alt": "Ilustración de flores de azahar y naranjos al sol en un huerto marroquí"
+        },
+        "sources": [
+          "ysl",
+          "loreal"
+        ]
+      },
+      {
+        "id": "milan",
+        "place": "Milán, Italia",
+        "heading": "Qué nos dice el nombre Prada",
+        "point": [
+          9.19,
+          45.46
+        ],
+        "label": "Milán",
+        "body": [
+          "Prada cuenta que abrió en 1913 su primera tienda en la Galleria Vittorio Emanuele II, en Milán. Esa es la pista que usamos al señalar la ciudad para Paradoxe. El vínculo viene de la historia de la casa italiana, cuya fragancia figura en el mismo grupo femenino citado por L’Oréal.",
+          "Para saber dónde se fabricó un frasco concreto, examina el envase o la ficha de esa presentación. El nombre de una casa y la ciudad donde empezó sirven de contexto cultural. La indicación de fabricación responde a otra pregunta y conviene tomarla de la etiqueta del producto que estás mirando.",
+          "Al volver al mapa, París y Milán nos hablan de casas. Calabria y Marruecos siguen ingredientes que Dior y Yves Saint Laurent identifican en fichas específicas. Esa distinción también sirve frente a descripciones generales como perfume francés, italiano o árabe. Pregúntate si se refieren al origen de la marca, al lugar de fabricación o al estilo de la fórmula.",
+          "Los informes de 2025 explican por qué aparecen estas fragancias. LVMH habla de Sauvage en la categoría masculina mundial y L’Oréal Luxe presenta su grupo femenino. Las fuentes citadas no publican un total de unidades por frasco con el que podamos ordenar ambas categorías en una sola tabla. El siguiente recorrido aplica esa misma lectura al mercado peruano."
+        ],
+        "sources": [
+          "prada",
+          "loreal"
+        ]
+      }
+    ],
+    "sources": [
+      {
+        "id": "lvmh",
+        "label": "LVMH · Resultados de 2025",
+        "href": "https://www.lvmh.com/en/publications/solid-performance-in-a-disrupted-global-economic-and-geopolitical-environment"
+      },
+      {
+        "id": "loreal",
+        "label": "L’Oréal · Resultados anuales 2025",
+        "href": "https://www.loreal-finance.com/eng/press-release/2025-annual-results"
+      },
+      {
+        "id": "dior-paris",
+        "label": "Dior · La historia del 30 Montaigne",
+        "href": "https://www.dior.com/en_int/fashion/30-montaigne/the-story-of-30-montaigne"
+      },
+      {
+        "id": "dior-sauvage",
+        "label": "Dior · Sauvage Eau de Toilette",
+        "href": "https://www.dior.com/en_int/beauty/products/sauvage-eau-de-toilette-Y0685240.html"
+      },
+      {
+        "id": "ysl",
+        "label": "Yves Saint Laurent Beauty · Libre Eau de Parfum",
+        "href": "https://www.yslbeauty.com/int/fragrance/fragrance-for-her/libre/libre-eau-de-parfum/WW-50424YSL.html"
+      },
+      {
+        "id": "prada",
+        "label": "Prada · Galleria 1913",
+        "href": "https://www.prada.com/ww/en/pradasphere/places/galleria-1913.html"
+      }
+    ],
+    "nextGuide": {
+      "slug": "perfumes-mas-vendidos-peru",
+      "description": "Del panorama mundial al mercado peruano. Mira qué fragancias aparecieron primero en un canal local y cómo se compara ese dato con las cifras del sector."
+    }
+  }
+}

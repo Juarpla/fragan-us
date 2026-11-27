@@ -1,0 +1,67 @@
+{
+  "slug":"perfumes-mas-vendidos-peru",
+  "title":"¿Qué perfumes se compran en Perú?",
+  "description":"Un top cinco observado en Mercado Libre Perú y cifras del sector para entender qué perfumes destacan en ese canal y qué sabemos del mercado peruano.",
+  "cover_key":"perfumes-peru-v1",
+  "cover_alt":"Frasco de perfume violeta y una caja frente al mar y los acantilados de la Costa Verde",
+  "published_on":"2026-11-27",
+  "content":{
+    "nextGuide":{"slug":"perfumes-mas-caros","description":"Sigue explorando la diferencia entre precios de boutique, resultados de subasta y valoraciones de frascos históricos."},
+    "chapters":[
+      {
+        "id":"una-compra",
+        "heading":"Mirar el mercado desde dos ventanas",
+        "body":[
+          "Si preguntas en una tienda qué perfume se vende más, obtendrás una respuesta útil para esa tienda. Una plataforma de comercio electrónico suma una ventana distinta. Cada canal tiene vendedores, precios, entregas y clientes que explican parte de lo que aparece primero. Para mirar Perú sin confundir esos alcances, usamos dos fuentes que responden a preguntas complementarias.",
+          "La primera es el estudio de inteligencia comercial de COPECOH, el gremio de la Cámara de Comercio de Lima. Sus resultados describen la categoría de fragancias como parte del mercado cosmético y de higiene personal. La segunda es la página pública de más vendidos de Mercado Libre Perú. Ahí sí aparecen nombres y posiciones de publicaciones concretas.",
+          "Imagina que buscas un perfume para regalar y ves el mismo nombre en una lista de internet y en una vitrina. La coincidencia puede orientar tu búsqueda, pero seguirás necesitando saber cuál era la versión y cuánto costaba en cada lugar. Con las ventas pasa algo parecido. El mercado completo y el orden de un catálogo sirven para cosas distintas, aunque los dos nos ayuden a entender cómo se compran los perfumes.",
+          "En esta guía le damos a cada fuente su escala. Primero revisamos las cifras nacionales de la categoría y después observamos el orden que se veía en una tienda virtual de alcance peruano."
+        ],
+        "sources":["ccl","mercado"]
+      },
+      {
+        "id":"mercado-peruano",
+        "heading":"Qué dicen las cifras del sector",
+        "body":[
+          "La Cámara de Comercio de Lima informó que el mercado peruano de cosmética e higiene personal alcanzó alrededor de 10 000 millones de soles en 2025. En ese balance, la categoría fragancias creció un 12 % respecto al año anterior y se situó en el 24 % del mercado medido por el estudio. El porcentaje corresponde a la categoría en conjunto.",
+          "El boletín de COPECOH para el primer semestre de 2026 vuelve a señalar un avance para fragancias y reporta un crecimiento de 8 %. Es otra ventana temporal. Conviene leer el resultado semestral junto a su propio periodo y usar el dato anual anterior para tener contexto, en vez de combinarlos como si ambos midieran los mismos meses.",
+          "En un mercado con venta directa, comercio minorista y compras por internet, las cifras nacionales ofrecen una perspectiva más amplia que un solo catálogo. La Cámara de Comercio de Lima ya destacaba el peso de la venta directa en fragancias al describir la evolución de los canales. Por eso el ranking de un sitio sirve como muestra de ese espacio comercial y la cifra del gremio sirve para entender la dimensión del sector."
+        ],
+        "sources":["ccl","copecoh","canales"]
+      },
+      {
+        "id":"ranking-mercado-libre",
+        "heading":"Una foto del ranking de Mercado Libre Perú",
+        "body":[
+          "Consultamos la página pública de la categoría de perfumes el 27 de noviembre de 2026. Los cinco puestos de abajo reproducen el orden de las publicaciones que mostraba la plataforma. La lista puede cambiar y pertenece a Mercado Libre Perú. La página consultada no ofrece un periodo común ni un total nacional que permita trasladar esas posiciones a todas las tiendas.",
+          "En esa captura, el primer puesto correspondía a Odyssey Mandarin Sky de Armaf y el segundo a Hawas Ice de Rasasi. Afnan 9 PM, Nautica Voyage y Lattafa Khamrah completaban los cinco primeros lugares. Es una selección interesante para explorar porque reúne casas y versiones distintas en un mismo tramo del catálogo.",
+          "Lo que copiamos de la página es la posición, la presentación y el volumen cuando aparecen claros. Hay otra cifra que merece trato aparte. El indicador de vendidos que acompaña a una publicación puede mostrarse como un umbral, como más de mil. Un umbral visible es útil para saber que la publicación superó cierta cantidad, pero no da un recuento exacto con el que puedas reconstruir todo el orden."
+        ],
+        "ranking":[
+          "Armaf Odyssey Mandarin Sky Limited Edition EDP · 100 ml",
+          "Rasasi Hawas Ice EDP · 100 ml",
+          "Afnan 9 PM EDP · 100 ml",
+          "Nautica Voyage EDT · 100 ml",
+          "Lattafa Khamrah · 100 ml"
+        ],
+        "sources":["mercado"]
+      },
+      {
+        "id":"escoger",
+        "heading":"Cómo usar el ranking antes de comprar",
+        "body":[
+          "Un buen punto de partida es elegir dos o tres candidatos por lo que ya disfrutas al oler un perfume. Lee las fichas de esas versiones y usa el ranking como una lista para explorar. Si tienes la oportunidad, prueba primero una muestra. Registra lo que notas al comienzo y vuelve a oler más tarde. Así comparas lo que ocurre en tu piel con la misma rutina para todos.",
+          "Mira la edición completa antes de comparar precios. Hawas Ice, por ejemplo, es el nombre que aparecía en el segundo puesto de la consulta. Si una ficha muestra otro nombre de la familia Hawas, confirma que sea el frasco que realmente buscas. La concentración y el volumen también pueden cambiar, aunque la botella tenga un diseño parecido.",
+          "Anota el precio del perfume y el coste de recibirlo en tu destino. Si una publicación ofrece distintos tamaños, compara primero el mismo contenido. Si estás dudando entre dos volúmenes de la misma edición, calcula el precio por mililitro y decide si usarás la diferencia. Para un regalo, también importan el plazo, el estado de la caja y las condiciones del vendedor.",
+          "Volver a mirar el ranking con esas preguntas hace que sea más útil. Sirve para descubrir nombres que circulan en un canal y para detectar versiones que vale la pena probar. La decisión de compra mejora cuando puedes explicar por qué ese tamaño, ese aroma y ese precio encajan con lo que estabas buscando."
+        ]
+      }
+    ],
+    "sources":[
+      {"id":"ccl","label":"Cámara de Comercio de Lima · Balance del mercado en 2025","href":"https://lacamara.pe/sector-cosmeticos-supero-los-s-10-000-millones-en-2025-impulsado-por-fragancias-e-higiene-personal/"},
+      {"id":"copecoh","label":"COPECOH · Estudio del primer semestre de 2026","href":"https://www.copecoh.com/mercado-peruano-de-cosmeticos-e-higiene-personal-supera-los-s-5000-millones-en-el-primer-semestre-2026-y-proyecta-crecer-hasta-8-al-cierre-del-ano/"},
+      {"id":"canales","label":"Cámara de Comercio de Lima · Canales de venta del sector","href":"https://lacamara.pe/tiendas-especializadas-impulsan-crecimiento-del-sector-cosmeticos-e-higiene-personal/"},
+      {"id":"mercado","label":"Mercado Libre Perú · Más vendidos en perfumes","href":"https://www.mercadolibre.com.pe/mas-vendidos/MPE1271"}
+    ]
+  }
+}

@@ -9,6 +9,12 @@
     },
     "azahar-marruecos-v1": {
       "prompt": "Horizontal 3:2 high-end editorial documentary photograph for a fragrance atlas article about neroli. In a Moroccan bitter-orange grove, sprig of small white five-petaled orange blossoms with golden stamens and dark green leaves, with rows of orange trees and softly weathered ochre orchard wall behind. Warm but restrained late-afternoon light, subtle muted lavender shadows, true botanical proportions, elegant tactile fragrance-magazine visual. No products or people, no stylized borders, no text, no brand. Picture only. Illustration of place, not a historical or commercial record."
+    },
+    "perfumes-caros-v1": {
+      "prompt": "Photorealistic editorial still life 3:2 landscape for a Spanish perfume guide about historical auctions and luxury retail. A single imagined unlabeled amber scent bottle cut from extraordinary sheer faceted crystal under a glass display bell, on a slab of plum-colored velvet in a dark museum auction room, with a softly out of focus blank ivory auction tag. Precision glass caustics, restraint and sophisticated shadows, warm ivory glints and dark plum, frame wide with bottle slightly to the right of center. The original fictional bottle must not resemble a named commercial perfume. No people, words, logos, UI, price tags with writing or fake artifacts. Commercial luxury magazine photography, tactile and cinematic."
+    },
+    "perfumes-peru-v1": {
+      "prompt": "Realistic premium editorial photography 3:2 landscape for a perfume market guide about what people buy in Peru. Single original unlabeled deep violet glass bottle and small plain kraft shipping box on a light limestone ledge overlooking Lima's coastline, Costa Verde cliffs, grassy terraces and an overcast muted-blue Pacific. Delicate dry mauve tones in sky, clear real-looking sea and green coast, bright soft daylight, refined FraganUS visual style, bottle in foreground center-right, beautifully composed with breathing room. No people, no images of actual brands, no words or graphics. Photorealistic editorial illustration, not news documentation."
     }
   }
 }

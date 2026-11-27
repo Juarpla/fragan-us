@@ -1,0 +1,79 @@
+{
+  "slug": "perfumes-mas-caros",
+  "title": "Los perfumes más caros y qué hay detrás de su precio",
+  "description": "De una boutique a una subasta y una pieza de joyería en Dubái. Comparamos precios de boutique, subastas y valoraciones para entender qué pesa en cada cifra.",
+  "cover_key": "perfumes-caros-v1",
+  "cover_alt": "Frasco imaginario de cristal facetado bajo una campana de vidrio sobre terciopelo ciruela",
+  "published_on": "2026-11-27",
+  "content": {
+    "mapView": [167, 31, 76, 41],
+    "nextGuide": {"slug":"origen-fragancias-mas-vendidas","description":"Sigue el viaje de las casas y los ingredientes detrás de fragancias que lideraron las ventas en 2025."},
+    "chapters": [
+      {
+        "id":"boutique",
+        "place":"Londres, Reino Unido",
+        "heading":"Qué precio estás mirando",
+        "point":[-0.13,51.51],
+        "label":"Londres",
+        "body":[
+          "Imagina tres etiquetas en una vitrina. Una dice cuánto pide una boutique por un frasco nuevo. Otra reproduce cuánto pagó alguien por un objeto de colección en una subasta. La tercera presenta la valoración de una pieza única con joyería. Las tres cantidades pueden aparecer en titulares sobre perfumes caros, aunque cada una responde a una pregunta distinta.",
+          "Para ver la diferencia, basta empezar en una tienda. En la colección oficial británica de Clive Christian, el No. 1 Feminine de 50 mililitros figuraba a 650 libras cuando consultamos la página. Dividir ese precio entre el volumen da 13 libras por mililitro. La cuenta sirve para comparar tamaños dentro del mismo mercado y en la misma moneda.",
+          "Esa división tiene límites. El envase, la presentación y el precio de la marca vienen incluidos en el importe que se divide. Por eso el resultado describe el coste para quien compra un frasco completo. Para comparar dos ofertas, anota primero el tamaño, la edición, el país y si la tienda indica disponibilidad. Una cifra de catálogo puede seguir visible cuando cambia el inventario."
+        ],
+        "sources":["clive"]
+      },
+      {
+        "id":"edicion",
+        "heading":"Una edición histórica y su envoltura",
+        "body":[
+          "La misma casa ofrece un salto de escala. Guinness World Records documenta que en noviembre de 2005 Clive Christian lanzó No. 1 Imperial Majesty en una edición de diez frascos de 500 mililitros. El precio descrito fue de 115 000 libras por frasco, cerca de 205 000 dólares según el equivalente de la época que reproduce Guinness.",
+          "La edición usaba cristal Baccarat. Guinness describe un diamante blanco de cinco quilates y un collar de oro de dieciocho quilates, además de una entrega en Bentley incluida en la oferta. El nombre familiar de la colección invita a ponerla al lado del frasco de 50 mililitros. Al mirar las condiciones de cada ejemplo se entiende por qué la comparación necesita algo más que una regla de tres.",
+          "Las libras de 2005 pertenecen a un momento concreto. Pasarlas a dólares con la tasa de hoy produciría otra cifra, y ajustar por inflación respondería a una pregunta diferente. En esta guía conservamos el precio de lanzamiento y su equivalente publicado en la época para que cualquiera pueda volver al registro y entender de dónde sale el número."
+        ],
+        "sources":["imperial"]
+      },
+      {
+        "id":"paris",
+        "place":"París, Francia",
+        "heading":"Un precio sugerido y un resultado de subasta",
+        "point":[2.35,48.86],
+        "label":"París",
+        "body":[
+          "En su web estadounidense, Chanel muestra un precio sugerido de 3 800 dólares para el N°5 Parfum Grand Extrait de 7,6 onzas líquidas. La ficha describe un frasco de vidrio tallado y un estuche. Es una referencia pública de la marca para ese formato en ese mercado. Para saber si puede comprarse, la propia página dirige al contacto de Chanel.",
+          "La subasta aporta una clase distinta de evidencia. En los resultados de la colección del Château de Gourdon, Christie’s informó que un frasco Baccarat para Guerlain, lote 464, alcanzó 7 500 euros. El dato pertenece a esa venta de marzo de 2011. La colección, la pieza y la fecha sirven para localizar el resultado y evitar que la cifra se cite como precio actual.",
+          "Si exploras catálogos de subastas, busca el número de lote y distingue la estimación previa del importe publicado después de la venta. También conviene revisar si la casa incluye la comisión del comprador en el resultado. Dos entradas con cifras parecidas pueden describir piezas de estado, antigüedad y procedencia muy distintos. En esas circunstancias, dividir el importe entre mililitros aportaría poca información."
+        ],
+        "sources":["chanel","christies"]
+      },
+      {
+        "id":"dubai",
+        "place":"Dubái, Emiratos Árabes Unidos",
+        "heading":"Una fragancia convertida en pieza de joyería",
+        "point":[55.27,25.2],
+        "label":"Dubái",
+        "body":[
+          "En 2019, The Spirit of Dubai presentó Shumukh. La marca divulgó una valoración de 1 295 000 dólares y señala que el conjunto contiene tres litros de perfume. Guinness documentó 3 571 diamantes engastados en el frasco. Si lees el titular del récord, fíjate en qué se contó exactamente. La cantidad de diamantes es la medición que Guinness atribuye al récord del frasco.",
+          "La fuente de la cifra monetaria es la marca. La presentamos como valoración anunciada, una categoría útil para entender la ambición del objeto. Para tratarla como precio de venta efectivamente pagado haría falta documentación de una transacción. La distinción entre las dos ideas puede perderse cuando se comparte una imagen con una cifra muy llamativa.",
+          "Aquí el volumen también ayuda a interpretar el caso. Tres litros con un pedestal y un frasco joya describen una presentación excepcional. Si el interés es comparar lo que se puede pedir en tienda esta semana, conviene volver a botellas con una lista de precios y una indicación de disponibilidad."
+        ],
+        "sources":["shumukh","guinness"]
+      },
+      {
+        "id":"comparar",
+        "heading":"Cómo leer la próxima cifra",
+        "body":[
+          "La manera más útil de comparar estos ejemplos es mantener visibles sus etiquetas. Clive Christian y Chanel muestran precios de referencia para presentaciones identificadas. Imperial Majesty conserva un precio de lanzamiento de 2005. Christie’s aporta un resultado para una pieza subastada. Shumukh llega con una valoración difundida durante su presentación.",
+          "Si una publicación promete un primer puesto, prueba a buscar cuatro datos antes de compartirla. Anota el nombre y la edición, qué incluye el monto, quién lo registró y cuándo ocurrió. Ese pequeño contexto permite comparar botellas de boutique entre sí o mirar la historia de los objetos de colección con otra escala. También deja espacio para disfrutar de la rareza del frasco, incluso cuando tu curiosidad principal es saber cómo huele el perfume."
+        ]
+      }
+    ],
+    "sources":[
+      {"id":"clive","label":"Clive Christian · Original Collection","href":"https://www.clivechristian.com/collections/original-collection"},
+      {"id":"imperial","label":"Guinness World Records · Imperial Majesty","href":"https://www.guinnessworldrecords.com/world-records/most-expensive-perfume"},
+      {"id":"chanel","label":"Chanel · N°5 Parfum Grand Extrait","href":"https://www.chanel.com/us/fragrance/p/120450/n5-parfum-grand-extrait/"},
+      {"id":"christies","label":"Christie’s · Resultados del Château de Gourdon","href":"https://www.christies.com/presscenter/pdf/2011/chateau_gourdon_results_march_2011.pdf"},
+      {"id":"shumukh","label":"The Spirit of Dubai · Shumukh","href":"https://www.thespiritofdubai.com/shumukh/"},
+      {"id":"guinness","label":"Guinness World Records · El frasco de Shumukh","href":"https://www.guinnessworldrecords.com/news/commercial/2019/4/this-record-breaking-perfume-bottle-is-covered-in-3500-diamonds-and-costs-more-568604"}
+    ]
+  }
+}

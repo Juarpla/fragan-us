@@ -14,6 +14,7 @@ export interface GuideChapter {
   point?: [longitude: number, latitude: number];
   label?: string;
   body: string[];
+  ranking?: string[];
   image?: { key: string; alt: string };
   sources?: string[];
 }
@@ -21,11 +22,7 @@ export interface GuideChapter {
 interface GuideContent {
   mapView?: [x: number, y: number, width: number, height: number];
   chapters: GuideChapter[];
-  comparison?: {
-    heading: string;
-    description: string;
-    groups: { heading: string; scope: string; entries: string[]; source: string }[];
-  };
+  nextGuide?: { slug: string; description: string };
   sources: { id: string; label: string; href: string }[];
 }
 
@@ -33,6 +30,11 @@ export async function listGuides(db?: D1Database): Promise<GuideCard[]> {
   const list = await db?.prepare(`SELECT slug, title, description, cover_key, cover_alt, published_on
     FROM published_guides ORDER BY published_on DESC, slug`).all<GuideCard>();
   return list?.results ?? [];
+}
+
+export function getGuideCard(db: D1Database | undefined, slug: string) {
+  return db?.prepare('SELECT title FROM published_guides WHERE slug = ?')
+    .bind(slug).first<Pick<GuideCard, 'title'>>();
 }
 
 export async function getGuide(db: D1Database | undefined, slug: string) {

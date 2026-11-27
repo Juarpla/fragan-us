@@ -1,9 +1,9 @@
 ---
-import { ArrowDown, ArrowRight, ChevronRight } from '@lucide/astro';
+import { ArrowDown, ArrowRight } from '@lucide/astro';
 import Base from '../../layouts/Base.astro';
 import GuideImage from '../../components/GuideImage.astro';
 import GuideMap from '../../components/GuideMap.astro';
-import { getGuide, guideImage } from '../../lib/guides';
+import { getGuide, getGuideCard, guideImage } from '../../lib/guides';
 import { publicStoreOrigin, storeEnv } from '../../lib/runtime';
 import '../../styles/guides.css';
 
@@ -13,6 +13,8 @@ const guideOrigin = publicStoreOrigin(Astro.url);
 const content = guide?.content;
 const sources = new Map(content?.sources.map(source => [source.id, source]));
 const firstChapter = content?.chapters[0];
+const followup = content?.nextGuide;
+const nextGuide = followup && await getGuideCard(storeEnv.DB, followup.slug);
 const showMap = content?.mapView && content.chapters.some(chapter => chapter.point);
 ---
 <Base title={guide?.title ?? 'Guía no encontrada'} description={guide?.description}>
@@ -26,9 +28,6 @@ const showMap = content?.mapView && content.chapters.some(chapter => chapter.poi
     </>}
   </Fragment>
   {guide && content ? <article class="container guide-article">
-    <nav class="breadcrumbs" aria-label="Ruta de navegación">
-      <a href="/">Inicio</a><ChevronRight size={14} aria-hidden="true" /><a href="/guias">Guías</a>
-    </nav>
     <header class="guide-cover">
       <div class="guide-cover-copy">
         <h1>{guide.title}</h1>
@@ -47,12 +46,13 @@ const showMap = content?.mapView && content.chapters.some(chapter => chapter.poi
             <h2 id={`titulo-${chapter.id}`}>{chapter.heading}</h2>
             {chapter.place && <p class="guide-place">{chapter.place}</p>}
             {chapter.body.map(paragraph => <p class="guide-paragraph">{paragraph}</p>)}
+            {chapter.ranking && <ol class="guide-ranking" role="list">{chapter.ranking.map(entry => <li>{entry}</li>)}</ol>}
             {chapter.image && <figure>
               <GuideImage imageKey={chapter.image.key} alt={chapter.image.alt} sizes="(max-width: 760px) calc(100vw - 32px), 650px" />
               <figcaption>Ilustración editorial generada para FraganUS.</figcaption>
             </figure>}
-            {chapter.sources?.length && <ul class="guide-inline-sources" aria-label="Fuentes del capítulo">
-              {chapter.sources.map(id => {
+            {Boolean(chapter.sources?.length) && <ul class="guide-inline-sources" aria-label="Fuentes del capítulo">
+              {chapter.sources?.map(id => {
                 const source = sources.get(id);
                 return source && <li><a href={source.href}>{source.label}</a></li>;
               })}
@@ -61,18 +61,13 @@ const showMap = content?.mapView && content.chapters.some(chapter => chapter.poi
         ))}
       </div>
     </div>
-    {content.comparison && <section class="guide-comparison" aria-labelledby="comparacion">
-      <h2 id="comparacion">{content.comparison.heading}</h2>
-      <p>{content.comparison.description}</p>
-      <div class="guide-comparison-groups">
-        {content.comparison.groups.map(group => <div>
-          <h3>{group.heading}</h3>
-          <p>{group.scope}</p>
-          <ul>{group.entries.map(entry => <li>{entry}</li>)}</ul>
-          {sources.has(group.source) && <a href={sources.get(group.source)?.href}>{sources.get(group.source)?.label}</a>}
-        </div>)}
+    {followup && nextGuide && <aside class="guide-next" aria-labelledby="siguiente-guia">
+      <div>
+        <h2 id="siguiente-guia">{nextGuide.title}</h2>
+        <p>{followup.description}</p>
       </div>
-    </section>}
+      <a class="button secondary" href={`/guias/${followup.slug}`}>Leer la guía <ArrowRight size={17} aria-hidden="true" /></a>
+    </aside>}
     <footer class="guide-end">
       <details>
         <summary>Fuentes y créditos</summary>
@@ -80,7 +75,7 @@ const showMap = content?.mapView && content.chapters.some(chapter => chapter.poi
           {content.sources.map(source => <li><a href={source.href}>{source.label}</a></li>)}
           {showMap && <li><a href="https://www.naturalearthdata.com/downloads/110m-physical-vectors/">Mapa base de Natural Earth</a></li>}
         </ul>
-        <p>Portada e imágenes de capítulo generadas para FraganUS.</p>
+        <p>Ilustraciones editoriales generadas para FraganUS.</p>
       </details>
       <a class="guide-text-link" href="/guias">Volver a Guías <ArrowRight size={17} aria-hidden="true" /></a>
     </footer>
