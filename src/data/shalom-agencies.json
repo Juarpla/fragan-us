@@ -1,6 +1,6 @@
 {
-  "sourceVersion": "4175",
-  "checkedAt": "2026-11-25T17:40:00.248Z",
+  "sourceVersion": "4231",
+  "checkedAt": "2026-11-27T19:32:20.560Z",
   "agencies": [
     {"id":2,"ubigeo":"060701","name":"BAMBAMARCA","address":"AV. TUPAC AMARU 1105, REFERENCIA: AL COSTADO DEL PARADERO AL CUMBE","latitude":-6.677954,"longitude":-78.525601},
     {"id":3,"ubigeo":"010101","name":"CHACHAPOYAS CO DOS DE MAYO","address":"JR. DOS DE MAYO CDRA. 15 S/N CHACHAPOYAS, REFERENCIA: JUNTO A TERMINAL DE COMBIS ETSA","latitude":-6.238673,"longitude":-77.868008},
@@ -203,6 +203,7 @@
     {"id":308,"ubigeo":"180301","name":"ILO PUERTO","address":"JR. CALLAO PROLONGACIÓN MZ. N, LT. 19 - A, REFERENCIA: A MEDIA CDRA. DE LA COOPERATIVA CUAJONE","latitude":-17.644711,"longitude":-71.342124},
     {"id":309,"ubigeo":"130111","name":"AV LARCO","address":"AV. LARCO 865, TRUJILLO - TRUJILLO - LA LIBERTAD, REF. MZ X LT 28 CUI SAN ANDRES V ETAPA TERCER SECTOR","latitude":-8.13775,"longitude":-79.050335},
     {"id":311,"ubigeo":"080108","name":"VELASCO ASTETE","address":"VELASCO ASTETE D3 - WANCHAQ, REFERENCIA: A 2 CDRAS. DEL AEREOPUERTO","latitude":-13.538484,"longitude":-71.946637},
+    {"id":312,"ubigeo":"250105","name":"PUCALLPA CO FEDERICO BASADRE","address":"CARRETERA FEDERICO BASADRE KM 6.800 YARINACOCHA - CORONEL PORTILLO - UCAYALI, REF. Entrada del Asentamiento Humano Alan Sisley/Al costado de la empresa JVJ Service Oriente SAC","latitude":-8.393748,"longitude":-74.588121},
     {"id":313,"ubigeo":"250105","name":"YARINACOCHA CENTRO","address":"JR. TUPAC AMARU, MZ. 50, LT. 07, REFERENCIA: A ESPALDA DE MAESTRANZA DE YARINACOCHA","latitude":-8.357749,"longitude":-74.57631},
     {"id":314,"ubigeo":"120302","name":"PERENE","address":"AV. MARGINAL S/N AA.VV SAN JACINTO - PERENE - CHANCHAMAYO - JUNIN, REF. ANTES DEL ULTIMO ROMPEMUELLE DE SAN JACINTO","latitude":-10.949522,"longitude":-75.223239},
     {"id":315,"ubigeo":"060301","name":"CELENDIN","address":"JR. PEDRO ORTIZ MONTOYA 148, REFERENCIA: ESQUINA CON AV. AMAZONAS","latitude":-6.87148,"longitude":-78.143727},
