@@ -1,8 +1,7 @@
-import { timingSafeEqual } from 'node:crypto';
 import type { APIRoute } from 'astro';
 import { parseProduct } from '../../../lib/admin-products';
 import { productPhotoPlaceholder, type Product } from '../../../lib/catalog';
-import { json } from '../../../lib/http';
+import { hasBearerToken, json } from '../../../lib/http';
 import { imageFormat, readImageForm } from '../../../lib/images';
 import { storeEnv } from '../../../lib/runtime';
 
@@ -14,19 +13,11 @@ type Candidate = Pick<Product, 'slug' | 'name' | 'brand' | 'price_cents' | 'volu
   edit_version: number;
 };
 
-function authorized(request: Request) {
-  const token = storeEnv.CATALOG_ENRICHMENT_TOKEN;
-  if (!token || token.length < 32) return false;
-  const given = Buffer.from(request.headers.get('Authorization') ?? '');
-  const expected = Buffer.from(`Bearer ${token}`);
-  return given.length === expected.length && timingSafeEqual(given, expected);
-}
-
 const columns = 'slug, name, brand, price_cents, volume, concentration, audience, family, tone, description, image_url, climate, occasions, notes, edit_version';
 const missingPhoto = (url: string) => !url || url === productPhotoPlaceholder;
 
 export const GET: APIRoute = async ({ request, url }) => {
-  if (!authorized(request)) return json({ error: 'Acceso restringido.' }, 401);
+  if (!hasBearerToken(request, storeEnv.CATALOG_ENRICHMENT_TOKEN)) return json({ error: 'Acceso restringido.' }, 401);
   const db = storeEnv.DB;
   if (!db) return json({ error: 'Catálogo no disponible.' }, 503);
   const after = url.searchParams.get('after') ?? '';
@@ -44,7 +35,7 @@ export const GET: APIRoute = async ({ request, url }) => {
 };
 
 export const POST: APIRoute = async ({ request }) => {
-  if (!authorized(request)) return json({ error: 'Acceso restringido.' }, 401);
+  if (!hasBearerToken(request, storeEnv.CATALOG_ENRICHMENT_TOKEN)) return json({ error: 'Acceso restringido.' }, 401);
   const { DB: db, RECEIPTS_BUCKET: bucket } = storeEnv;
   if (!db || !bucket) return json({ error: 'Catálogo no disponible.' }, 503);
   const form = await readImageForm(request).catch(() => null);

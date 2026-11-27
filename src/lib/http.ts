@@ -1,7 +1,16 @@
+import { timingSafeEqual } from 'node:crypto';
+
 export const json = (body: unknown, status = 200) => new Response(JSON.stringify(body), {
   status,
   headers: { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store' },
 });
+
+export function hasBearerToken(request: Request, token?: string) {
+  if (!token || token.length < 32) return false;
+  const given = Buffer.from(request.headers.get('Authorization') ?? '');
+  const expected = Buffer.from(`Bearer ${token}`);
+  return given.length === expected.length && timingSafeEqual(given, expected);
+}
 
 export function checkoutMode(env?: StoreEnv) {
   if (!env?.DB || !env.RECEIPTS_BUCKET) return 'unavailable';

@@ -9,6 +9,7 @@ interface StoreEnv {
   ADMIN_USER?: string;
   ADMIN_PASSWORD?: string;
   CATALOG_ENRICHMENT_TOKEN?: string;
+  GUIDES_AUTOMATION_TOKEN?: string;
   TELEGRAM_BOT_TOKEN?: string;
   TELEGRAM_CHAT_ID?: string;
 }

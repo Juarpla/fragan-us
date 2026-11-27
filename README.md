@@ -51,3 +51,9 @@ En Catálogo y stock, el alta requiere nombre, marca y precio. Dejar el stock va
 El workflow **Completar fichas de perfumes** corre cada seis horas. También se puede ejecutar desde Actions con vista previa activada para revisar los campos encontrados sin modificar el catálogo. La automatización compara nombre, marca y los datos de la versión con las fichas oficiales de Lattafa, Armaf, Rasasi y Afnan. Solo completa campos vacíos con una coincidencia única y deja pendientes los datos que no puede verificar. Las recomendaciones de clima y ocasión se derivan de la familia olfativa.
 
 Para habilitar el workflow, registra la misma clave aleatoria de al menos 32 caracteres como secreto `CATALOG_ENRICHMENT_TOKEN` tanto en GitHub Actions como en el Worker. La clave tiene acceso únicamente a consultar y completar fichas incompletas.
+
+## Renovación de Guías
+
+El workflow **Renovar una guía con Agnes** se programa los domingos a las 7 p. m. de Lima. Rota entre las guías publicadas y genera una entradilla y una portada con Agnes. D1 conserva cada revisión y R2 guarda la portada en WebP de 640 y 1280 píxeles. Los capítulos, las cifras y las fuentes se editan en el contenido base.
+
+Configura `AGNES_API_KEY` como secreto de GitHub Actions y la misma clave de al menos 32 caracteres como `GUIDES_AUTOMATION_TOKEN` en GitHub Actions y en el Worker. La ejecución manual ofrece una vista previa que genera los materiales sin escribirlos en la tienda. El [plan editorial](content/guias/plan-editorial.md) enumera las 20 guías.

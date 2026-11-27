@@ -9,5 +9,8 @@ TELEGRAM_CHAT_ID=""
 # Clave compartida con el workflow de enriquecimiento del catálogo.
 CATALOG_ENRICHMENT_TOKEN=""
 
+# Clave compartida con el workflow editorial de Guías.
+GUIDES_AUTOMATION_TOKEN=""
+
 # WhatsApp de soporte, con código de país y solo dígitos.
 SUPPORT_WHATSAPP=""

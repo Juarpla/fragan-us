@@ -31,14 +31,13 @@ interface GuideContent {
 
 export async function listGuides(db?: D1Database): Promise<GuideCard[]> {
   const list = await db?.prepare(`SELECT slug, title, description, cover_key, cover_alt, published_on
-    FROM guides WHERE published_on IS NOT NULL AND published_on <= date('now')
-    ORDER BY published_on DESC, slug`).all<GuideCard>();
+    FROM published_guides ORDER BY published_on DESC, slug`).all<GuideCard>();
   return list?.results ?? [];
 }
 
 export async function getGuide(db: D1Database | undefined, slug: string) {
   const row = await db?.prepare(`SELECT slug, title, description, cover_key, cover_alt, published_on, content
-    FROM guides WHERE slug = ? AND published_on IS NOT NULL AND published_on <= date('now')`)
+    FROM published_guides WHERE slug = ?`)
     .bind(slug).first<GuideCard & { content: string }>();
   return row && { ...row, content: JSON.parse(row.content) as GuideContent };
 }
