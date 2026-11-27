@@ -1,0 +1,85 @@
+---
+import type { GuideChapter } from '../lib/guides';
+
+interface Props {
+  chapters: GuideChapter[];
+  view: [number, number, number, number];
+}
+
+const { chapters, view } = Astro.props;
+const stops = chapters.flatMap(chapter => {
+  if (!chapter.point) return [];
+  const [longitude, latitude] = chapter.point;
+  return [{ ...chapter, x: 180 + longitude, y: 90 - latitude }];
+});
+const [x, y, width, height] = view;
+---
+<aside class="atlas-panel" aria-label="Mapa del recorrido" data-atlas>
+  <svg class="atlas-map" viewBox={view.join(' ')} aria-hidden="true" focusable="false">
+    <defs>
+      <pattern id="atlas-grid" width="5" height="5" patternUnits="userSpaceOnUse">
+        <path d="M5 0H0V5" fill="none" stroke="#cbbbda" stroke-width=".12" />
+      </pattern>
+    </defs>
+    <rect {x} {y} {width} {height} fill="#f6f0fa" />
+    <image href="/guias/mapa.svg" width="360" height="180" />
+    <rect {x} {y} {width} {height} fill="url(#atlas-grid)" />
+    {stops.slice(1).map((stop, index) => {
+      const previous = stops[index];
+      const d = `M${previous.x},${previous.y} Q${(previous.x + stop.x) / 2},${Math.min(previous.y, stop.y) - 3} ${stop.x},${stop.y}`;
+      return <g fill="none">
+        <path class="atlas-route-base" {d} />
+        <path class="atlas-route" {d} pathLength="1" data-route={stop.id} />
+      </g>;
+    })}
+    {stops.map((stop, index) => (
+      <g data-atlas-stop={stop.id} data-active={index === 0 ? '' : undefined}>
+        <circle class="atlas-halo" cx={stop.x} cy={stop.y} r="1.7" />
+        <circle class="atlas-point" cx={stop.x} cy={stop.y} r=".9" />
+        <text x={stop.x + 1.75} y={stop.y - 1.1}>{stop.label ?? stop.place}</text>
+      </g>
+    ))}
+  </svg>
+  <nav class="atlas-nav" aria-label="Capítulos de la guía">
+    {stops.map((stop, index) => (
+      <a href={`#${stop.id}`} data-atlas-link={stop.id} aria-current={index === 0 ? 'location' : undefined}>
+        <span class="atlas-nav-dot" aria-hidden="true"></span>{stop.label ?? stop.place}
+      </a>
+    ))}
+  </nav>
+</aside>
+
+<script>
+  const atlas = document.querySelector<HTMLElement>('[data-atlas]');
+  if (atlas) {
+    const spots = [...atlas.querySelectorAll<SVGGElement>('[data-atlas-stop]')];
+    const chapters = spots.flatMap(spot => {
+      const chapter = spot.dataset.atlasStop && document.getElementById(spot.dataset.atlasStop);
+      return chapter ? [chapter] : [];
+    });
+    const links = [...atlas.querySelectorAll<HTMLAnchorElement>('[data-atlas-link]')];
+    const routes = [...atlas.querySelectorAll<SVGPathElement>('[data-route]')];
+
+    const show = (id: string) => {
+      const activeIndex = chapters.findIndex(chapter => chapter.id === id);
+      if (activeIndex < 0) return;
+
+      for (const spot of spots) spot.toggleAttribute('data-active', spot.dataset.atlasStop === id);
+      for (const link of links) {
+        if (link.dataset.atlasLink === id) link.setAttribute('aria-current', 'location');
+        else link.removeAttribute('aria-current');
+      }
+      routes.forEach((route, index) => route.toggleAttribute('data-visited', index < activeIndex));
+    };
+
+    const observer = new IntersectionObserver(entries => {
+      const visible = entries.filter(entry => entry.isIntersecting)
+        .sort((left, right) => left.boundingClientRect.top - right.boundingClientRect.top);
+      if (visible[0]) show(visible[0].target.id);
+    }, { rootMargin: '-36% 0px -45% 0px' });
+    chapters.forEach(chapter => observer.observe(chapter));
+    const showLinkedChapter = () => show(location.hash.slice(1));
+    window.addEventListener('hashchange', showLinkedChapter);
+    showLinkedChapter();
+  }
+</script>

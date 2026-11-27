@@ -1,0 +1,14 @@
+{
+  "generator": "OpenAI ImageGen",
+  "assets": {
+    "atlas-origenes-v1": {
+      "prompt": "Create one horizontal 3:2 editorial cover photograph for the first Spanish-language FraganUS perfume guide, Atlas olfativo. High-end fragrance magazine still life, only one clear faceted perfume flacon containing pale amber liquid with brushed antique silver stopper, no branding or text; it sits on an unfolded real vintage world map with delicate cartographic lines and a small dried bergamot twig. Close view from a slightly elevated three-quarter angle, the bottle toward center-right and fully visible, map with subtle faded violet/sepia tones fills picture edge to edge, shadow from late afternoon light. Warm ivory editorial paper, subtle mauve and dark plum shadows, restrained silver accents, tactile grain, photorealistic material and glass refraction. Sophisticated and quiet, warm but no orange cast, sharp center and softly receding map. Clean photo only, no headline or letters, arbitrary map lettering at most illegible. No borders, no layout, no UI, no extra bottles. Focus in center-right so image can crop on mobile, beautiful shareable web editorial cover."
+    },
+    "bergamota-calabria-v1": {
+      "prompt": "Horizontal 3:2 high-end editorial documentary photograph for a Spanish-language perfume atlas article. A real bergamot orchard on the sloping Mediterranean coast near Reggio Calabria, southern Italy. Focus on one recognizable knobbly yellow-green bergamot fruit with thick waxy leaves in the crisp foreground; in the background hazy coastal slope, patterned orchard and silvery blue water, direct still morning light. Restrained tones of pale greens, muted violet haze and warm ivory, natural texture, premium magazine photography, authentic and simple, no people, no products, no branding or text. Picture only. Illustration of place, not a historical or commercial record."
+    },
+    "azahar-marruecos-v1": {
+      "prompt": "Horizontal 3:2 high-end editorial documentary photograph for a fragrance atlas article about neroli. In a Moroccan bitter-orange grove, sprig of small white five-petaled orange blossoms with golden stamens and dark green leaves, with rows of orange trees and softly weathered ochre orchard wall behind. Warm but restrained late-afternoon light, subtle muted lavender shadows, true botanical proportions, elegant tactile fragrance-magazine visual. No products or people, no stylized borders, no text, no brand. Picture only. Illustration of place, not a historical or commercial record."
+    }
+  }
+}

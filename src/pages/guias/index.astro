@@ -1,0 +1,37 @@
+---
+import { ArrowRight } from '@lucide/astro';
+import Base from '../../layouts/Base.astro';
+import GuideImage from '../../components/GuideImage.astro';
+import { listGuides } from '../../lib/guides';
+import { storeEnv } from '../../lib/runtime';
+import '../../styles/guides.css';
+
+const [featured, ...otherGuides] = await listGuides(storeEnv.DB);
+---
+<Base title="Guías" description="Explora los orígenes, ingredientes y las historias detrás de las fragancias.">
+  <div class="container guides-index">
+    <header class="guides-index-header">
+      <h1>Guías</h1>
+      <p>Explora de dónde vienen las fragancias y qué historias guarda cada frasco.</p>
+    </header>
+    {featured ? <article class="guide-feature">
+      <a class="guide-feature-photo" href={`/guias/${featured.slug}`} tabindex="-1" aria-hidden="true">
+        <GuideImage imageKey={featured.cover_key} alt="" sizes="(max-width: 760px) calc(100vw - 32px), 690px" priority />
+      </a>
+      <div class="guide-feature-copy">
+        <h2><a href={`/guias/${featured.slug}`}>{featured.title}</a></h2>
+        <p>{featured.description}</p>
+        <a class="guide-text-link" href={`/guias/${featured.slug}`}>Explorar el mapa <ArrowRight size={18} aria-hidden="true" /></a>
+      </div>
+    </article> : <p>Las guías se publicarán aquí.</p>}
+    {otherGuides.length > 0 && <div class="guide-index-grid">
+      {otherGuides.map(guide => (
+        <article>
+          <GuideImage imageKey={guide.cover_key} alt={guide.cover_alt} sizes="(max-width: 760px) calc(100vw - 32px), 380px" />
+          <h2><a href={`/guias/${guide.slug}`}>{guide.title}</a></h2>
+          <p>{guide.description}</p>
+        </article>
+      ))}
+    </div>}
+  </div>
+</Base>

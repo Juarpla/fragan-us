@@ -8,7 +8,7 @@ import { climateLabel, money, occasionLabel, productPhotoPlaceholder, productSpe
 import { catalogHref, catalogParams, catalogSelection } from '../../lib/catalog-filters';
 import { getCatalog } from '../../lib/db';
 import { productSharePath } from '../../lib/product-share';
-import { storeEnv } from '../../lib/runtime';
+import { publicStoreOrigin, storeEnv } from '../../lib/runtime';
 
 const { filters, query, page } = catalogSelection(Astro.url.searchParams);
 const backToCatalog = catalogHref(filters, query, page);
@@ -24,13 +24,14 @@ const notes = product ? [
 ].filter(note => note.notes) : [];
 const specs = product && productSpecs(product);
 const related = products.filter(item => item.slug !== product?.slug).slice(0, 4);
+const productOrigin = publicStoreOrigin(Astro.url);
 const canonicalPath = product && `/perfumes/${encodeURIComponent(product.slug)}`;
-const canonicalUrl = canonicalPath && new URL(canonicalPath, Astro.url.origin).href;
+const canonicalUrl = canonicalPath && new URL(canonicalPath, productOrigin).href;
 const sharePath = product && (await productSharePath(storeEnv.DB, product.slug) ?? canonicalPath);
-const shareUrl = sharePath && new URL(sharePath, Astro.url.origin).href;
+const shareUrl = sharePath && new URL(sharePath, productOrigin).href;
 const shareTitle = product && `${product.name} · ${money(product.price_cents)}`;
 const shareDescription = product && `${[product.brand, product.concentration, product.volume > 0 && `${product.volume} ml`].filter(Boolean).join(' · ')}. Envío por separado.`;
-const shareImage = product && product.image_url !== productPhotoPlaceholder && new URL(product.image_url, Astro.url.origin).href;
+const shareImage = product && product.image_url !== productPhotoPlaceholder && new URL(product.image_url, productOrigin).href;
 ---
 <Base title={product ? `${product.name} de ${product.brand}` : 'Perfume no encontrado'} description={product?.description || undefined}>
   {product && <Fragment slot="head">

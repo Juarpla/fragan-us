@@ -1,0 +1,23 @@
+---
+import { guideImage } from '../lib/guides';
+
+interface Props {
+  imageKey: string;
+  alt: string;
+  sizes: string;
+  priority?: boolean;
+}
+
+const { imageKey, alt, sizes, priority = false } = Astro.props;
+---
+<img
+  src={guideImage(imageKey, 1280)}
+  srcset={`${guideImage(imageKey, 640)} 640w, ${guideImage(imageKey, 1280)} 1280w`}
+  {sizes}
+  {alt}
+  width="1280"
+  height="853"
+  loading={priority ? 'eager' : 'lazy'}
+  fetchpriority={priority ? 'high' : undefined}
+  decoding="async"
+/>
