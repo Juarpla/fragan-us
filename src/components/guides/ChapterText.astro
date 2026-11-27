@@ -1,0 +1,20 @@
+---
+import GuideImage from '../GuideImage.astro';
+import type { Guide, GuideChapter } from '../../lib/guides';
+
+interface Props {
+  chapter: GuideChapter;
+  sources: Guide['content']['sources'];
+}
+
+const { chapter, sources } = Astro.props;
+const chapterSources = chapter.sources?.flatMap(id => sources.filter(source => source.id === id));
+---
+{chapter.body.map(paragraph => <p class="guide-paragraph">{paragraph}</p>)}
+{chapter.image && <figure>
+  <GuideImage imageKey={chapter.image.key} alt={chapter.image.alt} sizes="(max-width: 760px) calc(100vw - 32px), 650px" />
+  <figcaption>Ilustración editorial generada para FraganUS.</figcaption>
+</figure>}
+{Boolean(chapterSources?.length) && <ul class="guide-inline-sources" aria-label="Fuentes del capítulo">
+  {chapterSources?.map(source => <li><a href={source.href}>{source.label}</a></li>)}
+</ul>}

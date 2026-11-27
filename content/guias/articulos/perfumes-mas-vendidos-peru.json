@@ -6,7 +6,30 @@
   "cover_alt":"Frasco de perfume violeta y una caja frente al mar y los acantilados de la Costa Verde",
   "published_on":"2026-11-27",
   "content":{
-    "nextGuide":{"slug":"perfumes-mas-caros","description":"Sigue explorando la diferencia entre precios de boutique, resultados de subasta y valoraciones de frascos históricos."},
+    "nextGuide": {
+      "slug": "perfumes-mas-caros",
+      "description": "Después de elegir qué probar, mira qué incluye la etiqueta de precio. La siguiente guía recorre tres maneras de valorar un perfume, desde el mostrador hasta una colección.",
+      "preview": {
+        "heading": "¿Qué estás pagando en cada frasco?",
+        "topics": [
+          {
+            "icon": "boutique",
+            "title": "En boutique",
+            "text": "Compara la edición y el tamaño antes de comparar precios, incluso si los frascos llevan el mismo nombre."
+          },
+          {
+            "icon": "auction",
+            "title": "En subasta",
+            "text": "Busca el resultado del remate y revisa qué incluye. El estado, el estuche y la procedencia ayudan a interpretar el precio."
+          },
+          {
+            "icon": "collection",
+            "title": "Una pieza de colección",
+            "text": "Separa el valor atribuido al diseño, los materiales y la escasez de lo que pagarías por la fragancia."
+          }
+        ]
+      }
+    },
     "chapters":[
       {
         "id":"una-compra",
@@ -21,6 +44,7 @@
       },
       {
         "id":"mercado-peruano",
+      "marketShare": {"percent":24,"scope":"Fragancias dentro del mercado peruano de cosmética e higiene personal en 2025","attribution":"CCL y COPECOH · balance de 2025"},
         "heading":"Qué dicen las cifras del sector",
         "body":[
           "La Cámara de Comercio de Lima informó que el mercado peruano de cosmética e higiene personal alcanzó alrededor de 10 000 millones de soles en 2025. En ese balance, la categoría fragancias creció un 12 % respecto al año anterior y se situó en el 24 % del mercado medido por el estudio. El porcentaje corresponde a la categoría en conjunto.",

@@ -1,0 +1,13 @@
+---
+import GuideIndexCard from '../../components/GuideIndexCard.astro';
+import { guideIndexRequest, listGuidePage } from '../../lib/guides';
+import { storeEnv } from '../../lib/runtime';
+
+export const partial = true;
+const { day, page } = guideIndexRequest(Astro.url);
+const { cards, hasMore } = await listGuidePage(storeEnv.DB, day, page);
+Astro.response.headers.set('Cache-Control', 'no-store');
+---
+<div data-guide-batch data-has-more={hasMore ? 'true' : 'false'}>
+  {cards.map(guide => <GuideIndexCard {guide} />)}
+</div>

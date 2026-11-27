@@ -1,0 +1,125 @@
+---
+import { ArrowDown, ArrowUpRight } from '@lucide/astro';
+import GuideImage from '../../components/GuideImage.astro';
+import ChapterText from '../../components/guides/ChapterText.astro';
+import RelatedReading from '../../components/guides/RelatedReading.astro';
+import GuideArticle from '../../components/guides/GuideArticle.astro';
+import DrawOnScroll from '../../components/guides/DrawOnScroll.astro';
+import { getGuideStory } from '../../lib/guides';
+import { storeEnv } from '../../lib/runtime';
+
+const { guide, next } = await getGuideStory(storeEnv.DB, 'perfumes-mas-vendidos-peru');
+const { chapters, sources } = guide?.content ?? { chapters: [], sources: [] };
+const [channel, sector, ranking, buying] = chapters;
+const measure = sector?.marketShare;
+---
+<GuideArticle {guide}>
+  {guide && <>
+    <header class="peru-cover">
+      <div class="peru-cover-copy">
+        <h1>{guide.title}</h1>
+        <p>{guide.description}</p>
+        <a class="guide-text-link" href={`#${channel.id}`}>Empezar la lectura <ArrowDown size={17} aria-hidden="true" /></a>
+      </div>
+      <GuideImage imageKey={guide.cover_key} alt={guide.cover_alt} sizes="(max-width: 760px) calc(100vw - 32px), 1280px" priority />
+    </header>
+    {sector && <div class="peru-context">
+      <div class="peru-context-text">
+        {[channel, sector].map(chapter => <section class="guide-chapter" id={chapter.id} aria-labelledby={`titulo-${chapter.id}`}>
+          <h2 id={`titulo-${chapter.id}`}>{chapter.heading}</h2>
+          <ChapterText {chapter} {sources} />
+        </section>)}
+      </div>
+      {measure && <figure class="peru-measure" data-guide-draw>
+        <figcaption>{measure.scope}</figcaption>
+        <p class="peru-measure-value">{measure.percent}<span>%</span></p>
+        <svg viewBox="0 0 250 30" width="250" height="30" aria-hidden="true" focusable="false">
+          <path d="M8 15h234" fill="none" stroke="#d6c9dc" stroke-width="9" stroke-linecap="round" />
+          <path data-draw-line d={`M8 15h${234 * measure.percent / 100}`} pathLength="1" fill="none" stroke="#713c95" stroke-width="9" stroke-linecap="round" />
+          <path d="M8 25v5m117-5v5m117-5v5" stroke="#9078a1" />
+        </svg>
+        <p class="peru-measure-source">{measure.attribution}</p>
+      </figure>}
+    </div>}
+    {ranking && <section class="guide-chapter peru-ranking" id={ranking.id} aria-labelledby={`titulo-${ranking.id}`}>
+      <div>
+        <h2 id={`titulo-${ranking.id}`}>{ranking.heading}</h2>
+        <ChapterText chapter={ranking} {sources} />
+      </div>
+      <ol class="guide-ranking" role="list">
+        {ranking.ranking?.map(entry => <li>{entry}</li>)}
+      </ol>
+    </section>}
+    {buying && <section class="guide-chapter peru-buying" id={buying.id} aria-labelledby={`titulo-${buying.id}`}>
+      <h2 id={`titulo-${buying.id}`}>{buying.heading}</h2>
+      <ChapterText chapter={buying} {sources} />
+    </section>}
+    {next?.preview ? <aside class="peru-next" aria-labelledby="siguiente-guia">
+      <header>
+        <h2 id="siguiente-guia">{next.preview.heading}</h2>
+        <p>{next.description}</p>
+      </header>
+      <div class="peru-price-topics">
+        {next.preview.topics.map(({ icon, title, text }) => (
+          <section data-guide-draw>
+            <svg viewBox="0 0 100 72" width="100" height="72" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+              {icon === 'boutique' && <><path d="M17 60h66M27 60V37a23 23 0 0 1 46 0v23M46 14v-5h8v5" /><path data-draw-line pathLength="1" d="M39 53h22V42l-5-5H44l-5 5zM46 37v-5h8v5M12 27h8m-4-4v8" /></>}
+              {icon === 'auction' && <><path d="M15 60h35m-29-6h23m1-27 15 15m-26-6 25-25 12 12-25 25z" /><path data-draw-line pathLength="1" d="m62 39 22 20-5 5-22-20M18 20h11m-5.5-5.5v11" /></>}
+              {icon === 'collection' && <><path d="M24 32l10-14h32l10 14-26 28zM24 32h52" /><path data-draw-line pathLength="1" d="M34 18l8 14 8 28 8-28 8-14M42 32l8-14 8 14M50 5v5M77 11l-5 5m-49-5 5 5" /></>}
+            </svg>
+            <h3>{title}</h3>
+            <p>{text}</p>
+          </section>
+        ))}
+      </div>
+      <a class="button secondary" href={`/guias/${next.card.slug}`}>Leer la guía de perfumes caros <ArrowUpRight size={17} aria-hidden="true" /></a>
+    </aside> : next && <RelatedReading reading={next} />}
+
+    <DrawOnScroll />
+  </>}
+</GuideArticle>
+
+<style>
+  .peru-cover { display: grid; border-bottom: 1px solid #ded6e5; }
+  .peru-cover-copy { max-width: 820px; width: 100%; margin-inline: auto; padding: clamp(22px, 4.5vw, 62px) 0 30px; text-align: center; }
+  .peru-cover h1 { font: 500 clamp(36px, 6.1vw, 83px)/1.04 var(--serif); letter-spacing: -.038em; text-wrap: balance; }
+  .peru-cover p { margin: 14px auto 7px; max-width: 56ch; color: var(--muted); }
+  .peru-cover :global(img) { width: 100%; height: auto; aspect-ratio: 2.55; object-fit: cover; object-position: center 59%; border-radius: 14px; }
+  .peru-context { display: grid; grid-template-columns: minmax(0,1.25fr) minmax(0,.7fr); align-items: start; gap: clamp(28px, 7vw, 100px); margin-block: clamp(38px, 8vw, 105px) 0; }
+  .peru-measure { position: sticky; top: calc(var(--sticky-header-height) + 25px); margin: 0; padding: clamp(22px, 4vw, 50px); background: #f1ecf4; color: #432b51; }
+  .peru-measure figcaption { font-weight: 700; max-width: 34ch; }
+  .peru-measure-value { margin-block: 13px 6px; font: 500 clamp(60px, 8vw, 104px)/1 var(--serif); letter-spacing: -.04em; }
+  .peru-measure-value span { padding-left: 4px; font-size: .48em; }
+  .peru-measure svg { display: block; width: 100%; height: auto; }
+  .peru-measure-source { margin-top: 7px; color: #634e6f; font-size: .85rem; }
+  .peru-ranking { display: grid; grid-template-columns: minmax(0,.9fr) minmax(0,1fr); gap: clamp(22px, 5vw, 78px); padding: clamp(25px, 5vw, 66px); background: #eee7f5; border: 0; border-radius: 15px; }
+  .peru-ranking ol { margin: 0; }
+  .peru-ranking li { border-color: #d5c6e2; min-height: 53px; align-items: center; }
+  .peru-ranking li:last-child { border-bottom: 1px solid #d5c6e2; }
+  .peru-ranking li::before { font: 600 1.55rem var(--serif); }
+  .peru-buying { width: min(100%, 68ch); margin: clamp(38px, 7vw, 96px) auto 0; }
+  .peru-next { margin-top: clamp(20px, 4vw, 55px); border-radius: 15px; padding: clamp(23px, 5.3vw, 70px); color: #f7edf6; background: #32203e; }
+  .peru-next h2 { font: 500 clamp(29px, 4.1vw, 54px)/1.12 var(--serif); letter-spacing: -.03em; text-wrap: balance; }
+  .peru-next header p { margin-top: 12px; max-width: 66ch; color: #e6d6e8; }
+  .peru-price-topics { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 26px; margin-block: 32px; }
+  .peru-price-topics section { border-top: 1px solid #7e6687; padding-top: 12px; }
+  .peru-price-topics svg { display: block; color: #d9b9f3; margin: 0 0 10px -6px; }
+  .peru-price-topics section:nth-child(2) [data-draw-line] { animation-delay: .09s; }
+  .peru-price-topics section:nth-child(3) [data-draw-line] { animation-delay: .18s; }
+  .peru-price-topics h3 { font: 500 1.43rem/1.2 var(--serif); }
+  .peru-price-topics p { margin-top: 7px; color: #e6d6e8; }
+  .peru-next .button { color: #fff5ff; border-color: #bfa5d1; }
+  .peru-next .button:hover { color: var(--plum); background: #f2e5fc; }
+  @media (max-width: 860px) {
+    .peru-context, .peru-ranking { grid-template-columns: 1fr; }
+    .peru-measure { position: relative; top: auto; }
+    .peru-measure svg { max-width: 360px; }
+  }
+  @media (max-width: 620px) {
+    .peru-cover :global(img) { aspect-ratio: 3/2; }
+    .peru-price-topics { grid-template-columns: 1fr; gap: 18px; }
+    .peru-price-topics section { display: grid; grid-template-columns: 54px minmax(0,1fr); column-gap: 11px; }
+    .peru-price-topics svg { grid-row: span 2; width: 54px; height: 45px; margin: 0; }
+    .peru-price-topics p { grid-column: 2; }
+  }
+</style>

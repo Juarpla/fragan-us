@@ -1,0 +1,42 @@
+---
+import { ArrowRight } from '@lucide/astro';
+import Base from '../../layouts/Base.astro';
+import { guideImage, type Guide } from '../../lib/guides';
+import { publicStoreOrigin } from '../../lib/runtime';
+import '../../styles/guides.css';
+
+interface Props {
+  guide?: Guide | null;
+  mapCredit?: boolean;
+}
+const { guide, mapCredit = false } = Astro.props;
+const origin = publicStoreOrigin(Astro.url);
+if (!guide) Astro.response.status = 404;
+---
+<Base title={guide?.title ?? 'Guía no encontrada'} description={guide?.description}>
+  <Fragment slot="head">
+    {guide && <>
+      <link rel="canonical" href={new URL(`/guias/${guide.slug}`, origin).href} />
+      <meta property="og:type" content="article" />
+      <meta property="og:title" content={guide.title} />
+      <meta property="og:description" content={guide.description} />
+      <meta property="og:image" content={new URL(guideImage(guide.cover_key, 1280), origin).href} />
+    </>}
+  </Fragment>
+  {guide ? <article class="container guide-article">
+    <slot />
+    <footer class="guide-end">
+      <details>
+        <summary>Fuentes y créditos</summary>
+        <ul>
+          {guide.content.sources.map(source => <li><a href={source.href}>{source.label}</a></li>)}
+          {mapCredit && <li><a href="https://www.naturalearthdata.com/downloads/110m-physical-vectors/">Mapa base de Natural Earth</a></li>}
+        </ul>
+        <p>Ilustraciones editoriales generadas para FraganUS.</p>
+      </details>
+      <a class="guide-text-link" href="/guias">Volver a Guías <ArrowRight size={17} aria-hidden="true" /></a>
+    </footer>
+  </article> : <section class="container inner-section">
+    <h1 class="inner-title">Guía no encontrada</h1><a class="button secondary" href="/guias">Volver a Guías</a>
+  </section>}
+</Base>

@@ -1,0 +1,22 @@
+---
+import { ArrowUpRight } from '@lucide/astro';
+import type { GuideCard } from '../lib/guides';
+import GuideImage from './GuideImage.astro';
+
+const { guide, featured = false } = Astro.props as { guide: GuideCard; featured?: boolean };
+const headingId = `guia-${guide.slug}`;
+---
+<article class:list={[featured ? 'guide-feature' : 'guide-index-card']}>
+  <a class="guide-index-link" href={`/guias/${guide.slug}`} aria-labelledby={headingId}>
+    <div class="guide-index-photo">
+      <GuideImage imageKey={guide.cover_key} alt="" sizes={featured
+        ? '(max-width: 760px) calc(100vw - 32px), 690px'
+        : '(max-width: 580px) calc(100vw - 32px), (max-width: 1020px) 45vw, 420px'} priority={featured} />
+    </div>
+    <div class="guide-index-copy">
+      <h2 id={headingId}>{guide.title}</h2>
+      <p>{guide.description}</p>
+      <span class="guide-card-action" aria-hidden="true">Leer guía <ArrowUpRight size={17} /></span>
+    </div>
+  </a>
+</article>

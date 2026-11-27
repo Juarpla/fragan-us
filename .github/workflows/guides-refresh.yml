@@ -1,4 +1,4 @@
-name: Renovar una guía con Agnes
+name: Guías editoriales con Agnes
 
 on:
   schedule:
@@ -6,6 +6,10 @@ on:
       timezone: America/Lima
   workflow_dispatch:
     inputs:
+      tema:
+        description: Tema para preparar un briefing de diseño. Déjalo vacío para la renovación semanal.
+        type: string
+        required: false
       preview:
         description: Generar texto y portada de prueba sin publicarlos
         type: boolean
@@ -31,19 +35,25 @@ jobs:
         with:
           node-version: '24'
           cache: npm
-      - name: Redactar y generar portada para la guía en turno
+      - name: Preparar briefing o renovar la guía en turno
         env:
           AGNES_API_KEY: ${{ secrets.AGNES_API_KEY }}
           GUIDES_AUTOMATION_TOKEN: ${{ secrets.GUIDES_AUTOMATION_TOKEN }}
           GUIDES_STORE_URL: https://fraganus.link
+          GUIDES_CONCEPT_TOPIC: ${{ inputs.tema }}
           PREVIEW: ${{ inputs.preview }}
         run: |
-          if [[ -z "$AGNES_API_KEY" || -z "$GUIDES_AUTOMATION_TOKEN" ]]; then
-            echo '::notice::Configura AGNES_API_KEY y GUIDES_AUTOMATION_TOKEN para ejecutar la renovación semanal.'
+          if [[ -z "$AGNES_API_KEY" ]]; then
+            echo '::notice::Configura AGNES_API_KEY para ejecutar el flujo editorial.'
+            exit 0
+          fi
+          if [[ -z "$GUIDES_CONCEPT_TOPIC" && -z "$GUIDES_AUTOMATION_TOKEN" ]]; then
+            echo '::notice::Configura GUIDES_AUTOMATION_TOKEN para ejecutar la renovación semanal.'
             exit 0
           fi
 
           npm ci
+          npm run guides:check
           if [[ "$PREVIEW" == 'true' ]]; then
             node scripts/refresh-guides.mjs --preview
           else

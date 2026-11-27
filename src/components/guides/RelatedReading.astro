@@ -1,0 +1,13 @@
+---
+import { ArrowUpRight } from '@lucide/astro';
+import type { GuideReading } from '../../lib/guides';
+
+const { reading } = Astro.props as { reading: GuideReading };
+---
+<aside class="guide-next" aria-labelledby="siguiente-guia">
+  <div>
+    <h2 id="siguiente-guia">{reading.card.title}</h2>
+    <p>{reading.description}</p>
+  </div>
+  <a class="button secondary" href={`/guias/${reading.card.slug}`}>Leer la guía <ArrowUpRight size={17} aria-hidden="true" /></a>
+</aside>

@@ -1,0 +1,47 @@
+---
+import { ArrowDown } from '@lucide/astro';
+import GuideImage from '../../components/GuideImage.astro';
+import GuideMap from '../../components/GuideMap.astro';
+import ChapterText from '../../components/guides/ChapterText.astro';
+import RelatedReading from '../../components/guides/RelatedReading.astro';
+
+import GuideArticle from '../../components/guides/GuideArticle.astro';
+import { getGuideStory } from '../../lib/guides';
+import { storeEnv } from '../../lib/runtime';
+
+const { guide, next } = await getGuideStory(storeEnv.DB, 'origen-fragancias-mas-vendidas');
+const { chapters, mapView, sources } = guide?.content ?? { chapters: [], sources: [], mapView: undefined };
+---
+<GuideArticle {guide} mapCredit>
+  {guide && <>
+    <header class="guide-cover origin-cover">
+      <div class="guide-cover-copy">
+        <h1>{guide.title}</h1>
+        <p>{guide.description}</p>
+        <a class="button secondary guide-start" href={`#${chapters[0].id}`}>Empezar el recorrido <ArrowDown size={17} aria-hidden="true" /></a>
+      </div>
+      <div class="guide-cover-media">
+        <GuideImage imageKey={guide.cover_key} alt={guide.cover_alt} sizes="(max-width: 760px) calc(100vw - 32px), 670px" priority />
+      </div>
+    </header>
+    <div class="guide-journey has-atlas">
+      {mapView && <GuideMap {chapters} view={mapView} />}
+      <div class="guide-chapters">
+        {chapters.map(chapter => <section class="guide-chapter" id={chapter.id} aria-labelledby={`titulo-${chapter.id}`}>
+          <h2 id={`titulo-${chapter.id}`}>{chapter.heading}</h2>
+          {chapter.place && <p class="guide-place">{chapter.place}</p>}
+          <ChapterText {chapter} {sources} />
+        </section>)}
+      </div>
+    </div>
+    {next && <RelatedReading reading={next} />}
+  </>}
+</GuideArticle>
+
+<style>
+  .origin-cover { background: #efe7f3; }
+  .origin-cover .guide-cover-media { min-height: clamp(320px, 39vw, 560px); }
+  @media (max-width: 760px) {
+    .origin-cover .guide-cover-media { min-height: 0; }
+  }
+</style>

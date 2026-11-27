@@ -1,37 +1,105 @@
 ---
-import { ArrowRight } from '@lucide/astro';
+import { ArrowLeft, Plus } from '@lucide/astro';
 import Base from '../../layouts/Base.astro';
-import GuideImage from '../../components/GuideImage.astro';
-import { listGuides } from '../../lib/guides';
-import { storeEnv } from '../../lib/runtime';
+import GuideIndexCard from '../../components/GuideIndexCard.astro';
+import { guideIndexRequest, guideIndexUrl, guidesPerPage, listGuidePage } from '../../lib/guides';
+import { publicStoreOrigin, storeEnv } from '../../lib/runtime';
 import '../../styles/guides.css';
 
-const [featured, ...otherGuides] = await listGuides(storeEnv.DB);
+const { day, page } = guideIndexRequest(Astro.url);
+const { featured, cards, hasMore } = await listGuidePage(storeEnv.DB, day, page);
+const nextPage = page + 1;
+Astro.response.headers.set('Cache-Control', 'no-store');
 ---
 <Base title="Guías" description="Explora los orígenes, ingredientes y las historias detrás de las fragancias.">
-  <div class="container guides-index">
+  <link slot="head" rel="canonical" href={new URL('/guias', publicStoreOrigin(Astro.url)).href} />
+  <div class="container guides-index" data-guide-index data-day={day} data-page={nextPage}>
     <header class="guides-index-header">
       <h1>Guías</h1>
       <p>Explora de dónde vienen las fragancias y qué historias guarda cada frasco.</p>
+      {page > 1 && <a class="guide-text-link" href={guideIndexUrl(day, page - 1)}>
+        <ArrowLeft size={17} aria-hidden="true" /> Guías anteriores
+      </a>}
     </header>
-    {featured ? <article class="guide-feature">
-      <a class="guide-feature-photo" href={`/guias/${featured.slug}`} tabindex="-1" aria-hidden="true">
-        <GuideImage imageKey={featured.cover_key} alt="" sizes="(max-width: 760px) calc(100vw - 32px), 690px" priority />
+    {featured && <GuideIndexCard guide={featured} featured />}
+    {!featured && !cards.length && <p>{page === 1 ? 'Las guías se publicarán aquí.' : 'No hay más guías en esta página.'}</p>}
+    <div class="guide-index-grid" id="lista-guias">
+      {cards.map(guide => <GuideIndexCard {guide} />)}
+    </div>
+    {hasMore && <div class="guide-load">
+      <a class="button secondary" data-load-guides href={guideIndexUrl(day, nextPage)} aria-controls="lista-guias">
+        <Plus size={17} aria-hidden="true" /> Cargar 6 guías más
       </a>
-      <div class="guide-feature-copy">
-        <h2><a href={`/guias/${featured.slug}`}>{featured.title}</a></h2>
-        <p>{featured.description}</p>
-        <a class="guide-text-link" href={`/guias/${featured.slug}`}>Explorar el mapa <ArrowRight size={18} aria-hidden="true" /></a>
-      </div>
-    </article> : <p>Las guías se publicarán aquí.</p>}
-    {otherGuides.length > 0 && <div class="guide-index-grid">
-      {otherGuides.map(guide => (
-        <article>
-          <GuideImage imageKey={guide.cover_key} alt={guide.cover_alt} sizes="(max-width: 760px) calc(100vw - 32px), 380px" />
-          <h2><a href={`/guias/${guide.slug}`}>{guide.title}</a></h2>
-          <p>{guide.description}</p>
-        </article>
-      ))}
+      <p class="guide-load-status" data-guide-status role="status"></p>
+      <template data-guide-skeleton>
+        {Array.from({ length: guidesPerPage }, () => <div class="guide-skeleton" aria-hidden="true">
+          <div></div><span></span><span></span>
+        </div>)}
+      </template>
     </div>}
   </div>
 </Base>
+
+<script>
+  const index = document.querySelector<HTMLElement>('[data-guide-index]');
+  const control = index?.querySelector<HTMLAnchorElement>('[data-load-guides]');
+  const grid = index?.querySelector<HTMLElement>('.guide-index-grid');
+  const status = index?.querySelector<HTMLElement>('[data-guide-status]');
+  const template = index?.querySelector<HTMLTemplateElement>('[data-guide-skeleton]');
+
+  if (index && control && grid && status && template) {
+    let loading = false;
+    control.addEventListener('click', async event => {
+      if (event.button || event.metaKey || event.ctrlKey || event.altKey || event.shiftKey) return;
+      event.preventDefault();
+      if (loading) return;
+      loading = true;
+      const skeletons = template.content.cloneNode(true) as DocumentFragment;
+      const placeholders = [...skeletons.children];
+      grid.appendChild(skeletons);
+      grid.setAttribute('aria-busy', 'true');
+      control.setAttribute('aria-disabled', 'true');
+      status.textContent = 'Cargando guías…';
+
+      try {
+        const query = new URLSearchParams({ fecha: index.dataset.day!, pagina: index.dataset.page! });
+        const response = await fetch(`/guias/lote?${query}`, { redirect: 'error', signal: AbortSignal.timeout(15000) });
+        if (!response.ok) throw new Error('No se pudo cargar el lote de guías.');
+        const html = new DOMParser().parseFromString(await response.text(), 'text/html');
+        const batch = html.querySelector<HTMLElement>('[data-guide-batch]');
+        if (!batch) throw new Error('El lote no contiene guías.');
+        const existing = new Set([...index.querySelectorAll('.guide-index-link')].map(link => link.getAttribute('href')));
+        const cards = [...batch.querySelectorAll<HTMLElement>('.guide-index-card')]
+          .filter(card => !existing.has(card.querySelector('a')?.getAttribute('href') ?? null));
+        placeholders.forEach(placeholder => placeholder.remove());
+        cards.forEach(card => grid.appendChild(card));
+        const firstLink = cards[0]?.querySelector('a');
+        const focused = document.activeElement === control;
+        const hasMore = batch.dataset.hasMore === 'true';
+        if (hasMore) {
+          index.dataset.page = String(Number(index.dataset.page) + 1);
+          query.set('pagina', index.dataset.page);
+          control.href = `/guias?${query}`;
+        } else {
+          if (focused && !firstLink) {
+            status.tabIndex = -1;
+            status.focus();
+          }
+          control.hidden = true;
+        }
+        grid.removeAttribute('aria-busy');
+        if (focused) firstLink?.focus();
+        status.textContent = !cards.length
+          ? (hasMore ? 'Puedes cargar el siguiente grupo de guías.' : 'Ya viste todas las guías.')
+          : `${cards.length === 1 ? 'Se cargó 1 guía' : `Se cargaron ${cards.length} guías`}.${hasMore ? '' : ' Ya viste todas las guías.'}`;
+      } catch {
+        status.textContent = 'No pudimos cargar las guías. Intenta de nuevo.';
+      } finally {
+        placeholders.forEach(placeholder => placeholder.remove());
+        grid.removeAttribute('aria-busy');
+        control.removeAttribute('aria-disabled');
+        loading = false;
+      }
+    });
+  }
+</script>

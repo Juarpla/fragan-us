@@ -54,12 +54,12 @@ Para habilitar el workflow, registra la misma clave aleatoria de al menos 32 car
 
 ## Renovación de Guías
 
-El workflow **Renovar una guía con Agnes** se programa los domingos a las 7 p. m. de Lima. Rota entre las guías publicadas y genera una entradilla y una portada con Agnes. D1 conserva cada revisión y R2 guarda la portada en WebP de 640 y 1280 píxeles. Los capítulos, las cifras y las fuentes se editan en el contenido base.
+El workflow **Guías editoriales con Agnes** se programa los domingos a las 7 p. m. de Lima. Rota entre las guías publicadas y genera una entradilla y una portada siguiendo la dirección visual de cada guía. D1 conserva cada revisión y R2 guarda la portada en WebP de 640 y 1280 píxeles. Los capítulos, las cifras y las fuentes se editan en el contenido base.
 
-Configura `AGNES_API_KEY` como secreto de GitHub Actions y la misma clave de al menos 32 caracteres como `GUIDES_AUTOMATION_TOKEN` en GitHub Actions y en el Worker. La ejecución manual ofrece una vista previa que genera los materiales sin escribirlos en la tienda. El [plan editorial](content/guias/plan-editorial.md) enumera las 20 guías.
+Configura `AGNES_API_KEY` como secreto de GitHub Actions y la misma clave de al menos 32 caracteres como `GUIDES_AUTOMATION_TOKEN` en GitHub Actions y en el Worker. Para preparar la siguiente guía, ejecuta el workflow manualmente con **tema**. El briefing queda en el resumen de la ejecución. Con **tema** vacío, la opción **preview** genera una entradilla y portada de prueba. El [plan editorial](content/guias/plan-editorial.md) enumera las 20 guías.
 
 ### Crear una guía
 
-Toma el siguiente tema del [plan editorial](content/guias/plan-editorial.md) y documenta sus fuentes. En el borrador, escribe entre **800 y 1,200 palabras en los párrafos de los capítulos**. Incluye el alcance y la fecha de consulta de los rankings. Guarda la guía en `content/guias/articulos/<slug>.json`, con texto alternativo para la portada y una lectura relacionada cuando corresponda.
+Toma el siguiente tema del [plan editorial](content/guias/plan-editorial.md) y documenta sus fuentes. Escribe **al menos 800 palabras** en los párrafos de los capítulos. Usa 800–1,200 como referencia y amplía cuando el tema lo merezca. Incluye el alcance y la fecha de consulta de los rankings. Guarda la guía en `content/guias/articulos/<slug>.json`, con texto alternativo para la portada y una lectura relacionada cuando corresponda. Usa la [dirección creativa](content/guias/direccion-creativa.md) para crear la puesta en escena en `src/pages/guias/<slug>.astro` y su dirección visual en `content/guias/direcciones/<slug>.json`.
 
 Sube a R2 las variantes WebP de 640 y 1280 píxeles de cada imagen bajo `guides/` antes de publicar. Ejecuta `npm run guides:check` para validar el cuerpo. La compilación también ejecuta esa validación. Genera una migración con `npm run guides:check -- --migration <archivo-nuevo.sql> <slug>` y aplícala a D1 en el despliegue. La renovación de los domingos funciona aparte, sobre las guías publicadas.

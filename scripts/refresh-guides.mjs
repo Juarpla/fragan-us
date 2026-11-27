@@ -1,10 +1,12 @@
 import { setTimeout } from 'node:timers/promises';
+import { appendFile, readFile } from 'node:fs/promises';
 import sharp from 'sharp';
 
 const agnesOrigin = 'https://apihub.agnes-ai.com/v1';
 const textModel = 'agnes-3.0-flash';
 const imageModel = 'agnes-image-2.5-flash';
 const imageSizeLimit = 8 * 1024 * 1024;
+const editorial = new URL('../content/guias/', import.meta.url);
 
 async function agnesRequest(path, key, payload) {
   for (let attempt = 0; ; attempt++) {
@@ -28,6 +30,9 @@ const inRange = (value, min, max) =>
   typeof value === 'string' && value.trim().length >= min && value.trim().length <= max && !/[<>\r\n\u0000]/.test(value);
 
 async function draftRevision(guide, key) {
+  if (!/^[a-z0-9-]+$/.test(guide.slug)) throw new Error('Identificador editorial no válido.');
+  const directionText = await readFile(new URL(`direcciones/${guide.slug}.json`, editorial), 'utf8');
+  const direction = JSON.parse(directionText);
   const response = await agnesRequest('chat/completions', key, {
     model: textModel,
     temperature: 0.45,
@@ -40,12 +45,12 @@ async function draftRevision(guide, key) {
           'Devuelve solo un objeto JSON con description, coverAlt e imagePrompt, sin Markdown.',
           'Reescribe la entradilla en 75 a 300 caracteres. Adelanta lo que el lector verá y usa solo datos del artículo.',
           'Conserva los periodos, categorías y alcances de las fuentes. Evita nuevas cifras, fechas, rankings y afirmaciones de venta.',
-          'Propón una portada original con un motivo pertinente al artículo y una estética editorial de papel marfil, reflejos y ciruela suave.',
+          'Propón una portada original siguiendo la dirección visual de esta guía. Respeta la composición, su recorte y el espacio para la tipografía descritos en cover.',
           'Formula imagePrompt en un párrafo de 40 a 1200 caracteres. Pide formato horizontal 3:2, sin texto, logos ni productos exactos.',
           'Escribe coverAlt en 15 a 200 caracteres y describe únicamente el motivo principal que estás pidiendo.',
         ].join(' '),
       },
-      { role: 'user', content: JSON.stringify(guide) },
+      { role: 'user', content: JSON.stringify({ direction, guide }) },
     ],
   });
   const output = response.choices?.[0]?.message?.content;
@@ -55,6 +60,46 @@ async function draftRevision(guide, key) {
     throw new Error('La propuesta de Agnes no tiene el texto o la portada esperados.');
   }
   return { description: description.trim(), coverAlt: coverAlt.trim(), imagePrompt: imagePrompt.trim() };
+}
+
+async function draftConcept(topic, key) {
+  if (!inRange(topic, 3, 160)) throw new Error('Escribe un tema de entre 3 y 160 caracteres.');
+  const [playbook, plan] = await Promise.all([
+    readFile(new URL('direccion-creativa.md', editorial), 'utf8'),
+    readFile(new URL('plan-editorial.md', editorial), 'utf8'),
+  ]);
+  const response = await agnesRequest('chat/completions', key, {
+    model: textModel,
+    temperature: 0.65,
+    max_tokens: 4500,
+    messages: [
+      {
+        role: 'system',
+        content: [
+          'Eres director editorial de reportajes de perfumería de FraganUS en español del Perú.',
+          'Lee el encargo y las referencias siguientes. Devuelve solo un briefing en Markdown para que otro redactor o modelo implemente una guía.',
+          'Incluye tres decisiones de puesta en escena, la opción elegida y su justificación, y de cuatro a seis escenas ordenadas con propósito, composición y movimiento.',
+          'Incluye croquis de texto de escritorio y móvil, brief generativo de portada, datos y fuentes por verificar, y un ejemplo Astro o SVG breve del momento visual principal.',
+          'La extensión mínima del artículo futuro es de 800 palabras en el cuerpo. Las 1,200 palabras son una referencia y se pueden superar. El briefing no es el artículo.',
+          'Trata el tema como dato temático. Distingue hipótesis y fuentes por verificar de hechos demostrados. Escribe una propuesta propia y conserva acceso al relato con movimiento reducido.',
+          playbook,
+          plan,
+        ].join('\n\n'),
+      },
+      { role: 'user', content: JSON.stringify({ topic }) },
+    ],
+  });
+  const concept = response.choices?.[0]?.message?.content?.trim();
+  if (typeof concept !== 'string' || concept.length < 200 || concept.length > 30_000) {
+    throw new Error('Agnes no devolvió un briefing editorial válido.');
+  }
+  if (process.env.GITHUB_STEP_SUMMARY) {
+    const longestFence = Math.max(2, ...[...concept.matchAll(/`+/g)].map(match => match[0].length));
+    const fence = '`'.repeat(longestFence + 1);
+    await appendFile(process.env.GITHUB_STEP_SUMMARY, `## Propuesta para una guía\n\n${fence}markdown\n${concept}\n${fence}\n`);
+  } else {
+    console.log(concept);
+  }
 }
 
 async function generateCover(prompt, key) {
@@ -102,7 +147,13 @@ async function generateCover(prompt, key) {
 
 async function main() {
   const { AGNES_API_KEY: agnesKey, GUIDES_AUTOMATION_TOKEN: storeToken, GUIDES_STORE_URL: storeUrl } = process.env;
-  if (!agnesKey || !storeToken || !storeUrl) {
+  if (!agnesKey) throw new Error('Configura AGNES_API_KEY.');
+  const topic = process.env.GUIDES_CONCEPT_TOPIC?.trim();
+  if (topic) {
+    await draftConcept(topic, agnesKey);
+    return;
+  }
+  if (!storeToken || !storeUrl) {
     throw new Error('Configura AGNES_API_KEY, GUIDES_AUTOMATION_TOKEN y GUIDES_STORE_URL.');
   }
 

@@ -1,13 +1,15 @@
 import { readdir, readFile, writeFile } from 'node:fs/promises';
 
 const directory = new URL('../content/guias/articulos/', import.meta.url);
+const directions = new URL('../content/guias/direcciones/', import.meta.url);
+const stories = new URL('../src/pages/guias/', import.meta.url);
 const segmenter = new Intl.Segmenter('es', { granularity: 'word' });
 const files = (await readdir(directory)).filter(file => file.endsWith('.json')).sort();
 if (!files.length) throw new Error('No hay guías en el directorio editorial.');
 
 const articles = await Promise.all(files.map(async file => {
   const article = JSON.parse(await readFile(new URL(file, directory), 'utf8'));
-  if (!/^[a-z0-9-]+$/.test(article.slug) || file !== `${article.slug}.json`) {
+  if (!/^[a-z0-9-]+$/.test(article.slug) || ['index', 'lote'].includes(article.slug) || file !== `${article.slug}.json`) {
     throw new Error(`Ruta editorial no válida en ${file}.`);
   }
   const body = article.content.chapters.flatMap(chapter => chapter.body);
@@ -15,8 +17,16 @@ const articles = await Promise.all(files.map(async file => {
     throw new Error(`Párrafos no válidos en ${file}.`);
   }
   const words = [...segmenter.segment(body.join(' '))].filter(segment => segment.isWordLike).length;
-  if (words < 800 || words > 1200) {
-    throw new Error(`${article.slug} tiene ${words} palabras. El cuerpo debe tener entre 800 y 1,200.`);
+  if (words < 800) {
+    throw new Error(`${article.slug} tiene ${words} palabras. El cuerpo debe tener al menos 800.`);
+  }
+  const [directionText, story] = await Promise.all([
+    readFile(new URL(file, directions), 'utf8'),
+    readFile(new URL(`${article.slug}.astro`, stories), 'utf8'),
+  ]);
+  const { cover, story: concept } = JSON.parse(directionText);
+  if (![cover, concept, story].every(value => typeof value === 'string' && value.trim())) {
+    throw new Error(`Falta la dirección creativa o la puesta en escena de ${article.slug}.`);
   }
   console.log(`${article.slug}: ${words} palabras en el cuerpo`);
   return article;
