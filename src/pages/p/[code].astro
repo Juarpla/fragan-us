@@ -1,0 +1,15 @@
+---
+import Base from '../../layouts/Base.astro';
+import { sharedProductSlug } from '../../lib/product-share';
+import { storeEnv } from '../../lib/runtime';
+
+const slug = await sharedProductSlug(storeEnv.DB, Astro.params.code ?? '');
+if (slug) return Astro.rewrite(`/perfumes/${encodeURIComponent(slug)}`);
+Astro.response.status = 404;
+---
+<Base title="Perfume no disponible">
+  <section class="container inner-section">
+    <h1 class="inner-title">Perfume no disponible</h1>
+    <a class="button primary" href="/perfumes">Ver perfumes</a>
+  </section>
+</Base>

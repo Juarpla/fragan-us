@@ -4,9 +4,10 @@ import FragranceVisual from '../../components/FragranceVisual.astro';
 import Base from '../../layouts/Base.astro';
 import TikTok from '../../components/icons/TikTok.astro';
 import ProductCard from '../../components/ProductCard.astro';
-import { climateLabel, money, occasionLabel, productSpecs } from '../../lib/catalog';
+import { climateLabel, money, occasionLabel, productPhotoPlaceholder, productSpecs } from '../../lib/catalog';
 import { catalogHref, catalogParams, catalogSelection } from '../../lib/catalog-filters';
 import { getCatalog } from '../../lib/db';
+import { productSharePath } from '../../lib/product-share';
 import { storeEnv } from '../../lib/runtime';
 
 const { filters, query, page } = catalogSelection(Astro.url.searchParams);
@@ -23,21 +24,32 @@ const notes = product ? [
 ].filter(note => note.notes) : [];
 const specs = product && productSpecs(product);
 const related = products.filter(item => item.slug !== product?.slug).slice(0, 4);
+const canonicalPath = product && `/perfumes/${encodeURIComponent(product.slug)}`;
+const canonicalUrl = canonicalPath && new URL(canonicalPath, Astro.url.origin).href;
+const sharePath = product && (await productSharePath(storeEnv.DB, product.slug) ?? canonicalPath);
+const shareUrl = sharePath && new URL(sharePath, Astro.url.origin).href;
+const shareTitle = product && `${product.name} · ${money(product.price_cents)}`;
+const shareDescription = product && `${[product.brand, product.concentration, product.volume > 0 && `${product.volume} ml`].filter(Boolean).join(' · ')}. Envío por separado.`;
+const shareImage = product && product.image_url !== productPhotoPlaceholder && new URL(product.image_url, Astro.url.origin).href;
 ---
 <Base title={product ? `${product.name} de ${product.brand}` : 'Perfume no encontrado'} description={product?.description || undefined}>
+  {product && <Fragment slot="head">
+    <link rel="canonical" href={canonicalUrl} />
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="FraganUS" />
+    <meta property="og:title" content={shareTitle} />
+    <meta property="og:description" content={shareDescription} />
+    <meta property="og:url" content={shareUrl} />
+    {shareImage && <meta property="og:image" content={shareImage} />}
+    {shareImage && <meta property="og:image:alt" content={`${product.name} de ${product.brand}`} />}
+    <meta name="twitter:card" content="summary" />
+  </Fragment>}
   {product ? <div class="container detail-section">
     <nav class="breadcrumbs" aria-label="Ruta de navegación"><a href="/">Inicio</a><ChevronRight size={14} /><a href={backToCatalog}>Perfumes</a><ChevronRight size={14} /><span aria-current="page">{product.name}</span></nav>
     <section class="detail-layout" aria-labelledby="product-title">
       <FragranceVisual product={product} />
       <div class="detail-info">
-        <div class="detail-heading">
-          <h1 id="product-title">{product.name}</h1>
-          <button class="button share-perfume" type="button" data-share-perfume={`${product.name} de ${product.brand} | FraganUS`} hidden>
-            <Share2 size={17} aria-hidden="true" /> Compartir
-          </button>
-        </div>
-        <div class="share-status" role="status" data-share-status></div>
-        <input class="share-url" type="url" aria-label="Enlace del perfume" data-share-url readonly hidden />
+        <h1 id="product-title">{product.name}</h1>
         <p class="detail-identity">{[product.brand, product.audience].filter(Boolean).join(' · ')}</p>
         {specs && <p>{specs}</p>}
         <strong class="detail-price">{money(product.price_cents)}</strong>
@@ -45,8 +57,15 @@ const related = products.filter(item => item.slug !== product?.slug).slice(0, 4)
         <p class="detail-stock">{product.stock > 0 ? `${product.stock} ${product.stock === 1 ? 'unidad disponible' : 'unidades disponibles'}` : 'Agotado'}</p>
         <div class="detail-actions">
           <button class="button primary" type="button" data-add={JSON.stringify(product)} disabled={!product.stock}><ShoppingBag size={18} aria-hidden="true" /> Agregar a la bolsa</button>
-          <a class="button secondary" href={reviewsHref} target="_blank" rel="noopener noreferrer" data-tiktok-search={reviewsQuery}><TikTok size={17} /> Ver reseñas en TikTok <ExternalLink size={14} aria-hidden="true" /></a>
+          <div class="detail-secondary-actions">
+            <a class="button secondary" href={reviewsHref} target="_blank" rel="noopener noreferrer" data-tiktok-search={reviewsQuery}><TikTok size={17} /> <span>Ver reseñas en TikTok</span> <ExternalLink class="reviews-external" size={14} aria-hidden="true" /></a>
+            <button class="button share-perfume" type="button" data-share-perfume={shareTitle} data-share-href={shareUrl} hidden>
+              <Share2 size={17} aria-hidden="true" /> Compartir
+            </button>
+          </div>
         </div>
+        <div class="share-status" role="status" data-share-status></div>
+        <input class="share-url" type="url" aria-label="Enlace del perfume" data-share-url readonly hidden />
         <a class="reviews-web" href={reviewsHref} target="_blank" rel="noopener noreferrer" hidden>Abrir búsqueda en el navegador</a>
         <div class="detail-tags">{[...product.climate, ...product.occasions].map(key => {
           const label = climateLabel[key] ?? occasionLabel[key];
@@ -76,10 +95,11 @@ const related = products.filter(item => item.slug !== product?.slug).slice(0, 4)
   const shareStatus = document.querySelector<HTMLElement>('[data-share-status]');
   const shareUrl = document.querySelector<HTMLInputElement>('[data-share-url]');
 
-  if (shareButton && shareStatus && shareUrl) {
+  const shortUrl = shareButton?.dataset.shareHref;
+
+  if (shareButton && shareStatus && shareUrl && shortUrl) {
     const title = shareButton.dataset.sharePerfume;
-    const url = new URL(location.pathname, location.origin).href;
-    const shareData = { title, url };
+    const shareData = { title, text: title, url: shortUrl };
     let sharing = false;
 
     shareButton.hidden = false;
@@ -96,7 +116,7 @@ const related = products.filter(item => item.slug !== product?.slug).slice(0, 4)
           }
         }
 
-        await copyValue(url, shareStatus, shareUrl, 'Enlace copiado.');
+        await copyValue(shortUrl, shareStatus, shareUrl, 'Enlace copiado.');
       } finally {
         sharing = false;
       }
@@ -122,14 +142,14 @@ const related = products.filter(item => item.slug !== product?.slug).slice(0, 4)
 </script>
 
 <style>
-  .detail-heading {
+  .detail-secondary-actions {
     display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 12px;
+    gap: 6px;
+    max-width: 100%;
   }
 
-  .detail-heading h1 { min-width: 0; overflow-wrap: anywhere; }
+  .detail-secondary-actions a { min-width: 0; }
+  .detail-secondary-actions a :global(svg) { flex: none; }
 
   .share-perfume {
     flex: none;
@@ -139,6 +159,11 @@ const related = products.filter(item => item.slug !== product?.slug).slice(0, 4)
   }
 
   .share-perfume:hover { background: #f0e8f8; }
+
+  @media (max-width: 480px) {
+    .detail-secondary-actions a { padding-inline: 12px; }
+    .detail-secondary-actions .reviews-external { display: none; }
+  }
 
   .share-status { color: var(--purple-deep); font-size: .8rem; }
   .share-url {
